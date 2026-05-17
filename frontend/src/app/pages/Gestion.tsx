@@ -129,15 +129,17 @@ export default function Gestion() {
               Hola, {EMP.nombre} 👋
             </h1>
           </div>
-          <span
-            className="px-4 py-2 rounded-full text-sm font-bold"
-            style={{
-              background: PLAN === 'Premium' ? '#FF6B35' : 'rgba(255,255,255,0.15)',
-              color: 'white',
-            }}
-          >
-            {PLAN === 'Premium' ? '⭐ Plan Premium' : 'Plan Gratuito'}
-          </span>
+          {activeTab === 'ventas' && (
+            <span
+              className="px-4 py-2 rounded-full text-sm font-bold"
+              style={{
+                background: PLAN === 'Premium' ? '#FF6B35' : 'rgba(255,255,255,0.15)',
+                color: 'white',
+              }}
+            >
+              {PLAN === 'Premium' ? '⭐ Plan Premium' : 'Plan Gratuito'}
+            </span>
+          )}
         </div>
       </div>
 

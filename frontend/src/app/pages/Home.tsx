@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { Search, ArrowRight, MapPin, ChevronRight, Headphones, BookOpen } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { EMPRENDIMIENTOS, BLOG_POSTS, SELLOS_DISPONIBLES } from '../data/emprendimientos';
 import { EmprendimientoCard } from '../components/EmprendimientoCard';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
@@ -24,7 +25,10 @@ export default function Home() {
       {/* ─── HERO — centered, no chips, no floating cards ─── */}
       <section
         className="relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #19350C 0%, #2D5A1A 50%, #406768 100%)', minHeight: '580px' }}
+        style={{
+          background: `linear-gradient(135deg, rgba(25,53,12,0.85) 0%, rgba(45,90,26,0.75) 50%, rgba(64,103,104,0.85) 100%), url('/hero-bg.jpg') center/cover no-repeat`,
+          minHeight: '580px'
+        }}
       >
         {/* Organic blobs */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -33,13 +37,13 @@ export default function Home() {
           <div className="absolute top-1/2 left-1/3 w-40 h-40 rounded-full opacity-5" style={{ background: '#FF6B35' }} />
         </div>
 
-        <div className="relative max-w-3xl mx-auto px-6 py-20 lg:py-28 flex flex-col items-center text-center">
-          <div
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-6"
-            style={{ background: 'rgba(255,107,53,0.2)', color: '#FF6B35', border: '1px solid rgba(255,107,53,0.3)' }}
-          >
-            <span>🌿</span> Plataforma boliviana de impacto verde
-          </div>
+        <motion.div
+          className="relative max-w-3xl mx-auto px-6 py-20 lg:py-28 flex flex-col items-center text-center"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+        >
+
           <h1
             className="text-white mb-4 leading-tight"
             style={{ fontSize: 'clamp(2rem, 5vw, 3.25rem)', fontWeight: 800, lineHeight: 1.15 }}
@@ -91,12 +95,18 @@ export default function Home() {
               <MapPin size={16} /> Ver mapa verde
             </Link>
           </div>
-        </div>
+        </motion.div>
       </section>
 
       {/* ─── EMPRENDIMIENTOS DESTACADOS ─── */}
       <section className="py-16 px-6" style={{ background: '#F5F3EE' }}>
-        <div className="max-w-7xl mx-auto">
+        <motion.div
+          className="max-w-7xl mx-auto"
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: false, margin: "-50px" }}
+          transition={{ duration: 0.6 }}
+        >
           <div className="flex items-end justify-between mb-10">
             <div>
               <h2 style={{ color: '#19350C', fontWeight: 800, fontSize: '1.75rem' }}>
@@ -124,19 +134,25 @@ export default function Home() {
               Ver todos los emprendimientos <ChevronRight size={16} />
             </Link>
           </div>
-        </div>
+        </motion.div>
       </section>
 
       {/* ─── SELLOS VERDES ─── */}
       <section className="py-16 px-6" style={{ background: 'white' }}>
-        <div className="max-w-7xl mx-auto">
+        <motion.div
+          className="max-w-7xl mx-auto"
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: false, margin: "-50px" }}
+          transition={{ duration: 0.6 }}
+        >
           <div className="text-center mb-10">
             <h2 style={{ color: '#19350C', fontWeight: 800, fontSize: '1.75rem' }}>¿Qué significan los sellos verdes?</h2>
             <p className="mt-2 text-sm max-w-xl mx-auto" style={{ color: '#406768' }}>
               Cada sello es una verificación real del compromiso sostenible de un emprendimiento.
             </p>
           </div>
-          <div className="flex gap-4 overflow-x-auto pb-4" style={{ scrollbarWidth: 'none' }}>
+          <div className="flex gap-4 overflow-x-auto pb-4 lg:justify-center" style={{ scrollbarWidth: 'none' }}>
             {SELLOS_DISPONIBLES.map(sello => (
               <div
                 key={sello.key}
@@ -167,12 +183,18 @@ export default function Home() {
               Conoce cómo los emprendimientos obtienen estos sellos →
             </Link>
           </div>
-        </div>
+        </motion.div>
       </section>
 
       {/* ─── GUÍAS — formato horizontal compacto ─── */}
       <section className="py-14 px-6" style={{ background: '#F5F3EE' }}>
-        <div className="max-w-5xl mx-auto flex flex-col gap-4">
+        <motion.div
+          className="max-w-5xl mx-auto flex flex-col gap-4"
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: false, margin: "-50px" }}
+          transition={{ duration: 0.6 }}
+        >
           {/* Guía consumidor */}
           <div
             className="flex flex-col sm:flex-row sm:items-center gap-4 px-6 py-4 rounded-2xl"
@@ -236,12 +258,18 @@ export default function Home() {
               ))}
             </div>
           </div>
-        </div>
+        </motion.div>
       </section>
 
       {/* ─── ¿CÓMO QUIERES ENTRAR? ─── */}
       <section className="py-16 px-6" style={{ background: '#F5F3EE' }}>
-        <div className="max-w-7xl mx-auto text-center">
+        <motion.div
+          className="max-w-7xl mx-auto text-center"
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: false, margin: "-50px" }}
+          transition={{ duration: 0.6 }}
+        >
           <h2 style={{ color: '#19350C', fontWeight: 800, fontSize: '1.75rem' }}>¿Cómo quieres entrar?</h2>
           <p className="mt-2 mb-10 text-sm" style={{ color: '#406768' }}>Elige tu rol y empieza ahora</p>
           <div className="grid sm:grid-cols-2 gap-6 max-w-2xl mx-auto">
@@ -287,12 +315,18 @@ export default function Home() {
               </Link>
             </div>
           </div>
-        </div>
+        </motion.div>
       </section>
 
       {/* ─── BLOG ─── */}
       <section className="py-16 px-6" style={{ background: 'white' }}>
-        <div className="max-w-7xl mx-auto">
+        <motion.div
+          className="max-w-7xl mx-auto"
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: false, margin: "-50px" }}
+          transition={{ duration: 0.6 }}
+        >
           <div className="text-center mb-10">
             <h2 style={{ color: '#19350C', fontWeight: 800, fontSize: '1.75rem' }}>Aprende a consumir de forma más responsable</h2>
             <p className="mt-2 text-sm" style={{ color: '#406768' }}>Artículos y guías para un estilo de vida más consciente</p>
@@ -324,12 +358,18 @@ export default function Home() {
               </div>
             ))}
           </div>
-        </div>
+        </motion.div>
       </section>
 
       {/* ─── SOPORTE ─── */}
       <section className="py-16 px-6" style={{ background: '#F5F3EE' }}>
-        <div className="max-w-7xl mx-auto">
+        <motion.div
+          className="max-w-7xl mx-auto"
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: false, margin: "-50px" }}
+          transition={{ duration: 0.6 }}
+        >
           <div className="text-center mb-10">
             <h2 style={{ color: '#19350C', fontWeight: 800, fontSize: '1.75rem' }}>¿Necesitas ayuda?</h2>
             <p className="mt-2 text-sm" style={{ color: '#406768' }}>Estamos aquí para acompañarte</p>
@@ -358,7 +398,7 @@ export default function Home() {
               </div>
             ))}
           </div>
-        </div>
+        </motion.div>
       </section>
     </div>
   );
