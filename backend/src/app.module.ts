@@ -22,6 +22,9 @@ import { AdminModule } from './modules/admin/admin.module';
       ssl: {
         rejectUnauthorized: false, 
       },
+      extra: {
+        ssl: false,
+      }
     }),
     AuthModule,
     BusinessModule,
