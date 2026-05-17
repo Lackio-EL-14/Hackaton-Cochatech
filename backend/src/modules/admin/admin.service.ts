@@ -1,4 +1,3 @@
-// t1
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -33,7 +32,7 @@ export class AdminService {
 
     return this.businessRepository.save(business);
   }
-}
+
   async updateBusinessStatus(businessId: string, status: string, rejectionReason?: string) {
     const validStatuses = ['PENDING', 'APPROVED', 'REJECTED'];
     if (!validStatuses.includes(status)) {
@@ -49,9 +48,10 @@ export class AdminService {
       throw new NotFoundException('Negocio no encontrado');
     }
 
-    business.status = status;
+    business.status = status as any;
     business.rejectionReason = status === 'REJECTED' ? (rejectionReason ?? null) : null;
 
     return this.businessRepository.save(business);
   }
 }
+

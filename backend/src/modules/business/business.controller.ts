@@ -1,17 +1,16 @@
-//h2 y h3
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, Put, UseGuards, Req, ForbiddenException, Param } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { BusinessService } from './business.service';
 import { SearchBusinessDto } from './dto/search-business.dto';
 import { CreateBusinessDto } from './dto/create-business.dto';
 
 @Controller('businesses')
-export class BusinessController {
+export class BusinessesController {
   constructor(private readonly businessService: BusinessService) {}
 
   @Post('profile')
   async upsertProfile(
     @Body() createBusinessDto: CreateBusinessDto,
-    // @Req() req: any si tuvieramos autenticacion
     @Query('userId') userId: string
   ) {
     return this.businessService.upsertBusinessProfile(userId, createBusinessDto);
@@ -27,10 +26,6 @@ export class BusinessController {
     return this.businessService.getLightweightPins();
   }
 }
-import { Controller, Post, Put, Get, Body, UseGuards, Req, ForbiddenException, Param } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
-import { BusinessService } from './business.service';
-import { CreateBusinessDto } from './dto/create-business.dto';
 
 @Controller('business')
 export class BusinessController {
@@ -39,6 +34,15 @@ export class BusinessController {
   @Get()
   async findAll() {
     return this.businessService.findAllPublic();
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('my-profile')
+  async getMyProfile(@Req() req: any) {
+    if (req.user.role !== 'ENTREPRENEUR') {
+      throw new ForbiddenException('Solo Emprendedores pueden ver su perfil de negocio');
+    }
+    return this.businessService.findByUserId(req.user.id);
   }
 
   @UseGuards(AuthGuard('jwt'))
@@ -68,5 +72,5 @@ export class BusinessController {
   async getBusinessProducts(@Param('id') businessId: string) {
     return this.businessService.findProductsByBusiness(businessId);
   }
-
 }
+

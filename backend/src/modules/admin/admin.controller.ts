@@ -1,10 +1,10 @@
-//1
-import { Controller, Get, Patch, Param, Body, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Patch, Param, Body, ParseUUIDPipe, UseGuards, Req, ForbiddenException } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { AdminService } from './admin.service';
 import { UpdateBusinessStatusDto } from './dto/update-business-status.dto';
 
 @Controller('admin/businesses')
-export class AdminController {
+export class AdminBusinessesController {
   constructor(private readonly adminService: AdminService) {}
 
   @Get('pending')
@@ -20,9 +20,6 @@ export class AdminController {
     return this.adminService.updateStatus(id, updateStatusDto);
   }
 }
-import { Controller, Patch, Param, Body, UseGuards, Req, ForbiddenException } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
-import { AdminService } from './admin.service';
 
 @Controller('admin')
 @UseGuards(AuthGuard('jwt'))
@@ -43,3 +40,4 @@ export class AdminController {
     return this.adminService.updateBusinessStatus(businessId, status, rejectionReason);
   }
 }
+

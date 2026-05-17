@@ -1,16 +1,10 @@
-// h2 y h3
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, ConflictException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
-import { Business, BusinessStatus } from './entitites/business.entity'
+import { Business, BusinessStatus, SalesType } from './entitites/business.entity';
 import { SearchBusinessDto } from './dto/search-business.dto';
 import { CreateBusinessDto } from './dto/create-business.dto';
 import { Category } from './entitites/category.entity';
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Business } from './entities/business.entity';
-import { CreateBusinessDto } from './dto/create-business.dto';
 
 @Injectable()
 export class BusinessService {
@@ -19,7 +13,7 @@ export class BusinessService {
     private readonly businessRepository: Repository<Business>,
     @InjectRepository(Category)
     private readonly categoryRepository: Repository<Category>,
-  ) {}
+  ) { }
 
   async upsertBusinessProfile(userId: string, dto: CreateBusinessDto): Promise<Business> {
     const categories = await this.categoryRepository.findBy({
@@ -30,9 +24,9 @@ export class BusinessService {
       throw new BadRequestException('Una o más categorías enviadas no existen en el sistema.');
     }
 
-    let business = await this.businessRepository.findOne({ 
+    let business = await this.businessRepository.findOne({
       where: { userId },
-      relations: ['categories'] 
+      relations: ['categories']
     });
 
     if (business) {
@@ -44,13 +38,13 @@ export class BusinessService {
         salesType: dto.salesType,
         contactPhone: dto.contactPhone,
         operatingHours: dto.operatingHours,
-        categories: categories, 
-        status: BusinessStatus.PENDING, 
-        rejectionReason: null, 
+        categories: categories,
+        status: BusinessStatus.PENDING,
+        rejectionReason: null,
       });
     } else {
       business = this.businessRepository.create({
-        userId, 
+        userId,
         name: dto.name,
         description: dto.description,
         latitude: dto.latitude,
@@ -59,7 +53,7 @@ export class BusinessService {
         contactPhone: dto.contactPhone,
         operatingHours: dto.operatingHours,
         categories: categories,
-        status: BusinessStatus.PENDING, 
+        status: BusinessStatus.PENDING,
       });
     }
 
@@ -102,8 +96,6 @@ export class BusinessService {
       .where('business.status = :status', { status: BusinessStatus.APPROVED })
       .getMany();
   }
-}
-  ) {}
 
   async create(createBusinessDto: CreateBusinessDto, userId: string) {
     const existingBusiness = await this.businessRepository.findOne({ where: { userId } });
@@ -111,10 +103,20 @@ export class BusinessService {
       throw new ConflictException('Este usuario ya tiene un negocio registrado');
     }
 
+    const { categoryIds, ...businessData } = createBusinessDto;
+    
+    let categories: Category[] = [];
+    if (categoryIds && categoryIds.length > 0) {
+      categories = await this.categoryRepository.findBy({
+        id: In(categoryIds),
+      });
+    }
+
     const newBusiness = this.businessRepository.create({
-      ...createBusinessDto,
+      ...businessData,
+      categories,
       userId,
-      status: 'PENDING',
+      status: BusinessStatus.PENDING,
     });
 
     return this.businessRepository.save(newBusiness);
@@ -126,22 +128,32 @@ export class BusinessService {
       throw new NotFoundException('No se encontró ningún negocio asociado a este emprendedor');
     }
 
+    const { categoryIds, ...businessData } = updateBusinessDto;
+
+    let categories: Category[] = [];
+    if (categoryIds && categoryIds.length > 0) {
+      categories = await this.categoryRepository.findBy({
+        id: In(categoryIds),
+      });
+    }
+
     const updatedBusiness = this.businessRepository.merge(business, {
-      ...updateBusinessDto,
-      status: 'PENDING',
+      ...businessData,
+      categories: categories.length > 0 ? categories : business.categories,
+      status: BusinessStatus.PENDING,
       rejectionReason: null,
     });
 
     return this.businessRepository.save(updatedBusiness);
   }
-  
+
   async findAllPublic() {
-    const businesses = await this.businessRepository.find({ 
-      where: { status: 'APPROVED' } 
+    const businesses = await this.businessRepository.find({
+      where: { status: BusinessStatus.APPROVED }
     });
 
     const daysMap = ['dom', 'lun', 'mar', 'mie', 'jue', 'vie', 'sab'];
-    
+
     const now = new Date();
     const currentDay = daysMap[now.getDay()];
     const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
@@ -149,7 +161,7 @@ export class BusinessService {
     return businesses.map(business => {
       let isOpen = false;
       const todaySchedule = business.operatingHours?.[currentDay];
-      
+
       if (todaySchedule && todaySchedule.closed === false) {
         if (currentTime >= todaySchedule.open && currentTime <= todaySchedule.close) {
           isOpen = true;
@@ -174,4 +186,34 @@ export class BusinessService {
     return this.businessRepository.manager.query('SELECT * FROM categories');
   }
 
+  async findByUserId(userId: string): Promise<Business> {
+    let business = await this.businessRepository.findOne({
+      where: { userId },
+      relations: ['categories'],
+    });
+
+    if (!business) {
+      business = this.businessRepository.create({
+        userId,
+        name: 'Mi Nuevo Emprendimiento',
+        description: 'Describe tu emprendimiento aquí para atraer a más consumidores.',
+        latitude: -17.3895,
+        longitude: -66.1568,
+        salesType: SalesType.AMBOS,
+        contactPhone: '+591 70000000',
+        operatingHours: {
+          lun: { open: '09:00', close: '18:00', closed: false },
+          mar: { open: '09:00', close: '18:00', closed: false },
+          mie: { open: '09:00', close: '18:00', closed: false },
+          jue: { open: '09:00', close: '18:00', closed: false },
+          vie: { open: '09:00', close: '18:00', closed: false },
+        },
+        status: BusinessStatus.PENDING,
+      });
+      business = await this.businessRepository.save(business);
+    }
+
+    return business;
+  }
 }
+

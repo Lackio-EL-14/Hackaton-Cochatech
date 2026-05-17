@@ -1,4 +1,4 @@
-import { Injectable, ConflictException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, ConflictException, UnauthorizedException, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
@@ -8,12 +8,49 @@ import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
-export class AuthService {
+export class AuthService implements OnModuleInit {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,
   ) {}
+
+  async onModuleInit() {
+    try {
+      const adminEmail = 'admin@yoimpulso.bo';
+      const entrepreneurEmail = 'entrepreneur@yoimpulso.bo';
+
+      // Check if admin already exists
+      const adminExist = await this.userRepository.findOne({ where: { email: adminEmail } });
+      if (!adminExist) {
+        const salt = await bcrypt.genSalt(10);
+        const passwordHash = await bcrypt.hash('admin123', salt);
+        const adminUser = this.userRepository.create({
+          email: adminEmail,
+          passwordHash,
+          role: 'ADMIN',
+        });
+        await this.userRepository.save(adminUser);
+        console.log('🌱 Seeded default ADMIN user: admin@yoimpulso.bo / admin123');
+      }
+
+      // Check if entrepreneur already exists
+      const entrepreneurExist = await this.userRepository.findOne({ where: { email: entrepreneurEmail } });
+      if (!entrepreneurExist) {
+        const salt = await bcrypt.genSalt(10);
+        const passwordHash = await bcrypt.hash('entrepreneur123', salt);
+        const entrepreneurUser = this.userRepository.create({
+          email: entrepreneurEmail,
+          passwordHash,
+          role: 'ENTREPRENEUR',
+        });
+        await this.userRepository.save(entrepreneurUser);
+        console.log('🌱 Seeded default ENTREPRENEUR user: entrepreneur@yoimpulso.bo / entrepreneur123');
+      }
+    } catch (error) {
+      console.warn('⚠️ Seeding failed or table users does not exist yet:', error.message);
+    }
+  }
 
   async register(registerDto: RegisterDto) {
     const { email, password, role } = registerDto;
