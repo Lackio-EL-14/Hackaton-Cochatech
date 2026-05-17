@@ -69,4 +69,15 @@ export class BusinessService {
     });
   }
 
+  async findProductsByBusiness(businessId: string) {
+    return this.businessRepository.manager.query(
+      'SELECT * FROM products WHERE business_id = ?',
+      [businessId]
+    );
+  }
+
+  async findAllCategories() {
+    return this.businessRepository.manager.query('SELECT * FROM categories');
+  }
+
 }
