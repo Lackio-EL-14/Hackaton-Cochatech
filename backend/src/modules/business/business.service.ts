@@ -2,7 +2,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Business, BusinessStatus } from './entities/business.entity';
+import { Business, BusinessStatus } from './entitites/business.entity'
 import { SearchBusinessDto } from './dto/search-business.dto';
 
 @Injectable()
@@ -19,7 +19,7 @@ export class BusinessService {
       .createQueryBuilder('business')
       .leftJoinAndSelect('business.categories', 'category')
       .where('business.status = :status', { status: BusinessStatus.APPROVED })
-      .orderBy('business.createdAt', 'DESC'); // Los más nuevos aparecen primero
+      .orderBy('business.createdAt', 'DESC'); 
 
     if (query.name) {
       builder.andWhere('business.name LIKE :name', { name: `%${query.name}%` });
@@ -43,6 +43,8 @@ export class BusinessService {
         'business.latitude',
         'business.longitude',
         'business.operatingHours',
+        'business.contactPhone',
+        'business.salesType',
       ])
       .where('business.status = :status', { status: BusinessStatus.APPROVED })
       .getMany();

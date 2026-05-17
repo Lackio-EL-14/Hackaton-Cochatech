@@ -2,7 +2,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Business, BusinessStatus } from '../business/entities/business.entity';
+import { Business, BusinessStatus } from '../business/entitites/business.entity';
 import { UpdateBusinessStatusDto } from './dto/update-business-status.dto';
 
 @Injectable()
@@ -15,7 +15,6 @@ export class AdminService {
   async getPendingBusinesses(): Promise<Business[]> {
     return this.businessRepository.find({
       where: { status: BusinessStatus.PENDING },
-      order: { createdAt: 'DESC' },
     });
   }
 
@@ -30,7 +29,7 @@ export class AdminService {
     }
 
     business.status = dto.status;
-    business.rejectionReason = dto.status === BusinessStatus.REJECTED ? dto.rejectionReason : null;
+    business.rejectionReason = dto.status === BusinessStatus.REJECTED ? (dto.rejectionReason??null) : null;
 
     return this.businessRepository.save(business);
   }

@@ -1,10 +1,10 @@
 //h1
 import { IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
-import { BusinessStatus } from '../../business/entities/business.entity';
+import { BusinessStatus } from '../../business/entitites/business.entity';
 
 export class UpdateBusinessStatusDto {
   @IsEnum(BusinessStatus)
-  status: BusinessStatus;
+  status: BusinessStatus= BusinessStatus.PENDING;
 
   @IsOptional()
   @IsString()
