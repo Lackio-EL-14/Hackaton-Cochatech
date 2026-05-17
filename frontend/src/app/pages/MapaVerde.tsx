@@ -1,29 +1,30 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router';
 import { Search, X, MapPin, Navigation, ArrowLeft } from 'lucide-react';
-import { EMPRENDIMIENTOS, Emprendimiento } from '../data/emprendimientos';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 
-const FILTROS_MODALIDAD = [
-  { key: 'virtual', label: 'Negocio virtual', icon: '💻' },
-  { key: 'venta', label: 'Punto de venta', icon: '🏪' },
-  { key: 'entrega', label: 'Punto de entrega', icon: '📦' },
-  { key: 'ferias', label: 'Ferias sostenibles', icon: '🎪' },
-];
+// Re-defining the frontend type locally or adapting from the existing ones
+export interface Emprendimiento {
+  id: string;
+  nombre: string;
+  categoria: string;
+  categoriaColor: string;
+  ciudad: string;
+  modalidad: string;
+  imagen: string;
+  descripcion: string;
+  badges: string[];
+  contacto: string;
+  estado: string;
+  latitude: number;
+  longitude: number;
+}
 
-// Map pin positions (normalized 0-100 within the SVG map bounds)
-const PIN_POSITIONS: Record<string, { x: number; y: number }> = {
-  '1': { x: 55, y: 52 },
-  '2': { x: 42, y: 44 },
-  '3': { x: 60, y: 64 },
-  '4': { x: 68, y: 46 },
-  '5': { x: 35, y: 36 },
-  '6': { x: 62, y: 58 },
-  '7': { x: 30, y: 28 },
-  '8': { x: 50, y: 48 },
-  '9': { x: 58, y: 56 },
-  '10': { x: 45, y: 62 },
-};
+const FILTROS_MODALIDAD = [
+  { key: 'VIRTUAL', label: 'Negocio virtual', icon: '💻' },
+  { key: 'PRESENCIAL', label: 'Punto de venta/entrega', icon: '🏪' },
+  { key: 'AMBOS', label: 'Híbrido', icon: '🎪' },
+];
 
 const CATEGORY_ICONS: Record<string, string> = {
   'Alimentos y bebidas': '🍎',
@@ -34,19 +35,72 @@ const CATEGORY_ICONS: Record<string, string> = {
   'Servicios Vive y Aprende': '🌱',
 };
 
+// Deterministic position generator based on UUID string to scatter pins
+const getPinPosition = (id: string) => {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = id.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const x = 20 + Math.abs(hash % 60); // Between 20% and 80%
+  const y = 20 + Math.abs((hash >> 3) % 60); // Between 20% and 80%
+  return { x, y };
+};
+
 export default function MapaVerde() {
   const [search, setSearch] = useState('');
   const [selectedEmp, setSelectedEmp] = useState<Emprendimiento | null>(null);
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
+  const [emprendimientos, setEmprendimientos] = useState<Emprendimiento[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchMapData = async () => {
+      try {
+        const res = await fetch('/api/businesses/search');
+        if (!res.ok) throw new Error('Error fetching map data');
+        const data = await res.json();
+        
+        // Map backend Business entity to frontend Emprendimiento
+        const mappedData: Emprendimiento[] = data.map((b: any) => ({
+          id: b.id,
+          nombre: b.name,
+          categoria: b.categories && b.categories.length > 0 ? b.categories[0].name : 'Otros',
+          categoriaColor: '#687D31',
+          ciudad: 'Cochabamba',
+          modalidad: b.salesType || 'VIRTUAL',
+          imagen: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=600',
+          descripcion: b.description,
+          badges: ['Verificado', 'Eco-amigable'],
+          contacto: b.contactPhone,
+          estado: b.status,
+          latitude: Number(b.latitude) || 0,
+          longitude: Number(b.longitude) || 0,
+        }));
+        
+        setEmprendimientos(mappedData);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchMapData();
+  }, []);
 
   const toggleFilter = (key: string) => {
     setActiveFilters(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
   };
 
-  const visibleEmps = EMPRENDIMIENTOS.filter(e => {
-    if (e.estado === 'Bloqueado') return false;
+  const visibleEmps = emprendimientos.filter(e => {
+    if (e.estado === 'Bloqueado' || e.estado === 'REJECTED') return false;
+    
+    // Search filter
     const q = search.toLowerCase();
     if (q && !e.nombre.toLowerCase().includes(q) && !e.categoria.toLowerCase().includes(q)) return false;
+    
+    // Modality filter
+    if (activeFilters.length > 0 && !activeFilters.includes(e.modalidad)) return false;
+    
     return true;
   });
 
@@ -54,7 +108,7 @@ export default function MapaVerde() {
     <div className="flex h-[calc(100vh-64px)]" style={{ background: '#F5F3EE' }}>
       {/* Left panel */}
       <div
-        className="w-80 flex-shrink-0 flex flex-col border-r overflow-hidden"
+        className="w-80 flex-shrink-0 flex flex-col border-r overflow-hidden relative"
         style={{ background: 'white', borderColor: '#E8E6E0' }}
       >
         {/* Header */}
@@ -118,31 +172,44 @@ export default function MapaVerde() {
 
         {/* List */}
         <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
-          <p className="text-xs" style={{ color: '#406768' }}>
-            <span className="font-bold" style={{ color: '#19350C' }}>{visibleEmps.length}</span> emprendimientos en el mapa
-          </p>
-          {visibleEmps.map(e => (
-            <button
-              key={e.id}
-              onClick={() => setSelectedEmp(selectedEmp?.id === e.id ? null : e)}
-              className="flex items-center gap-3 p-3 rounded-xl text-left transition-all duration-200 hover:shadow-md w-full"
-              style={{
-                background: selectedEmp?.id === e.id ? '#F0F5E8' : '#F5F3EE',
-                border: `1px solid ${selectedEmp?.id === e.id ? '#687D31' : '#E8E6E0'}`,
-              }}
-            >
-              <div
-                className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm"
-                style={{ background: '#687D31' }}
-              >
-                {CATEGORY_ICONS[e.categoria] || '🌱'}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold truncate" style={{ color: '#19350C' }}>{e.nombre}</p>
-                <p className="text-xs truncate" style={{ color: '#406768' }}>{e.ciudad} · {e.modalidad}</p>
-              </div>
-            </button>
-          ))}
+          {loading ? (
+            <div className="flex justify-center py-10">
+              <div className="w-8 h-8 border-4 border-dashed rounded-full animate-spin" style={{ borderColor: '#687D31' }} />
+            </div>
+          ) : (
+            <>
+              <p className="text-xs" style={{ color: '#406768' }}>
+                <span className="font-bold" style={{ color: '#19350C' }}>{visibleEmps.length}</span> emprendimientos en el mapa
+              </p>
+              {visibleEmps.map(e => (
+                <button
+                  key={e.id}
+                  onClick={() => setSelectedEmp(selectedEmp?.id === e.id ? null : e)}
+                  className="flex items-center gap-3 p-3 rounded-xl text-left transition-all duration-200 hover:shadow-md w-full"
+                  style={{
+                    background: selectedEmp?.id === e.id ? '#F0F5E8' : '#F5F3EE',
+                    border: `1px solid ${selectedEmp?.id === e.id ? '#687D31' : '#E8E6E0'}`,
+                  }}
+                >
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm"
+                    style={{ background: '#687D31' }}
+                  >
+                    {CATEGORY_ICONS[e.categoria] || '🌱'}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold truncate" style={{ color: '#19350C' }}>{e.nombre}</p>
+                    <p className="text-xs truncate" style={{ color: '#406768' }}>{e.ciudad} · {e.modalidad}</p>
+                  </div>
+                </button>
+              ))}
+              {visibleEmps.length === 0 && (
+                <div className="text-center py-6">
+                  <p className="text-xs text-gray-500">No se encontraron resultados.</p>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
 
@@ -187,8 +254,8 @@ export default function MapaVerde() {
           </svg>
 
           {/* Pin markers */}
-          {visibleEmps.map(e => {
-            const pos = PIN_POSITIONS[e.id] || { x: 50, y: 50 };
+          {!loading && visibleEmps.map(e => {
+            const pos = getPinPosition(e.id);
             const isSelected = selectedEmp?.id === e.id;
             return (
               <button
@@ -223,7 +290,7 @@ export default function MapaVerde() {
             className="absolute bottom-6 right-6 w-80 rounded-2xl overflow-hidden z-20"
             style={{ background: 'white', boxShadow: '0 8px 32px rgba(25,53,12,0.2)' }}
           >
-            <div className="relative h-32 overflow-hidden">
+            <div className="relative h-32 overflow-hidden bg-gray-100">
               <ImageWithFallback
                 src={selectedEmp.imagen}
                 alt={selectedEmp.nombre}
@@ -231,7 +298,7 @@ export default function MapaVerde() {
               />
               <button
                 onClick={() => setSelectedEmp(null)}
-                className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center text-white"
+                className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center text-white transition-opacity hover:bg-black/70"
                 style={{ background: 'rgba(0,0,0,0.5)' }}
               >
                 <X size={14} />
@@ -265,13 +332,13 @@ export default function MapaVerde() {
                   Ver perfil
                 </Link>
                 <a
-                  href="https://maps.google.com"
+                  href={`https://maps.google.com/?q=${selectedEmp.latitude},${selectedEmp.longitude}`}
                   target="_blank"
                   rel="noreferrer"
                   className="flex items-center justify-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold transition-opacity hover:opacity-90"
                   style={{ background: '#F0F5E8', color: '#406768' }}
                 >
-                  <Navigation size={12} /> Cómo llegar
+                  <Navigation size={12} /> Llegar
                 </a>
               </div>
             </div>
@@ -295,3 +362,4 @@ export default function MapaVerde() {
     </div>
   );
 }
+
