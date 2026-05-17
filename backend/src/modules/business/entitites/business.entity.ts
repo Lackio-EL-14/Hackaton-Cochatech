@@ -5,6 +5,7 @@ import {
   ManyToMany, 
   JoinTable 
 } from 'typeorm';
+import { Category } from './category.entity';
 
 export enum BusinessStatus {
   PENDING = 'PENDING',
@@ -21,7 +22,7 @@ export enum SalesType {
 @Entity('businesses')
 export class Business {
   @PrimaryGeneratedColumn('uuid')
-  id: string="";
+  id: string;
 
   @Column({ name: 'user_id', type: 'char', length: 36 })
   userId: string="";
@@ -53,11 +54,11 @@ export class Business {
   @Column({ name: 'rejection_reason', type: 'text', nullable: true })
   rejectionReason: string | null=null;
 
-  @ManyToMany('Category', 'businesses')
+  @ManyToMany(() => Category, (category) => category.businesses)
   @JoinTable({
     name: 'business_categories',
     joinColumn: { name: 'business_id', referencedColumnName: 'id' },
     inverseJoinColumn: { name: 'category_id', referencedColumnName: 'id' },
   })
-  categories: any[]=[];
+  categories: Category[];
 }
