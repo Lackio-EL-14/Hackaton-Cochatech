@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router';
 import { Edit, Package, Bell, BarChart2, Plus, X, ShoppingBag, TrendingUp, Users, Star, Lock } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
@@ -105,6 +105,104 @@ export default function Gestion() {
   const [notifs, setNotifs] = useState<Notificacion[]>(NOTIFICACIONES_INICIAL);
   const [notifFiltro, setNotifFiltro] = useState('todas');
 
+  const [business, setBusiness] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    contactPhone: '',
+    latitude: -17.3895,
+    longitude: -66.1568,
+  });
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const token = sessionStorage.getItem('yo_impulso_token');
+        if (!token) {
+          setError('Inicia sesión para ver tu perfil de gestión.');
+          setLoading(false);
+          return;
+        }
+
+        const response = await fetch('/api/business/my-profile', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('No se pudo cargar el perfil del negocio.');
+        }
+
+        const data = await response.json();
+        setBusiness(data);
+      } catch (err: any) {
+        setError(err.message || 'Error al obtener datos');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
+  useEffect(() => {
+    if (business) {
+      setFormData({
+        name: business.name || '',
+        description: business.description || '',
+        contactPhone: business.contactPhone || '',
+        latitude: Number(business.latitude) || -17.3895,
+        longitude: Number(business.longitude) || -66.1568,
+      });
+    }
+  }, [business]);
+
+  const handleSaveChanges = async () => {
+    setSaveLoading(true);
+    setSaveSuccess(false);
+    setError(null);
+
+    try {
+      const token = sessionStorage.getItem('yo_impulso_token');
+      const response = await fetch('/api/business', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          description: formData.description,
+          latitude: formData.latitude,
+          longitude: formData.longitude,
+          contactPhone: formData.contactPhone,
+          salesType: business?.salesType || 'AMBOS',
+          operatingHours: business?.operatingHours || {},
+          categoryIds: business?.categories?.map((c: any) => c.id) || []
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al actualizar el perfil del negocio.');
+      }
+
+      const updated = await response.json();
+      setBusiness(updated);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (err: any) {
+      setError(err.message || 'Error al guardar los cambios');
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
   const notifsFiltradas = notifs.filter(n => {
     if (notifFiltro === 'no_leidas') return !n.leida;
     if (notifFiltro === 'solicitudes') return n.tipo === 'compra';
@@ -118,6 +216,17 @@ export default function Gestion() {
   const marcarTodasLeidas = () => setNotifs(prev => prev.map(n => ({ ...n, leida: true })));
   const marcarLeida = (id: string) => setNotifs(prev => prev.map(n => n.id === id ? { ...n, leida: true } : n));
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#F5F3EE' }}>
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 border-4 border-dashed rounded-full animate-spin" style={{ borderColor: '#687D31' }} />
+          <p className="text-sm font-bold animate-pulse" style={{ color: '#19350C' }}>Cargando perfil de gestión...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ background: '#F5F3EE', minHeight: '100vh' }}>
       {/* Header */}
@@ -126,7 +235,7 @@ export default function Gestion() {
           <div>
             <p className="text-sm mb-1" style={{ color: 'rgba(245,243,238,0.7)' }}>Panel de gestión</p>
             <h1 className="text-white" style={{ fontWeight: 800, fontSize: '1.5rem' }}>
-              Hola, {EMP.nombre} 👋
+              Hola, {business?.name || EMP.nombre} 👋
             </h1>
           </div>
           {activeTab === 'ventas' && (
@@ -176,30 +285,71 @@ export default function Gestion() {
         {activeTab === 'perfil' && (
           <div className="rounded-2xl p-6" style={{ background: 'white', boxShadow: '0 2px 12px rgba(25,53,12,0.06)' }}>
             <h2 className="font-bold mb-6" style={{ color: '#19350C', fontSize: '1.1rem' }}>Editar perfil del emprendimiento</h2>
+            
+            {saveSuccess && (
+              <div className="mb-5 p-3.5 rounded-xl text-xs font-bold text-center" style={{ background: '#F0F5E8', border: '1.5px solid #C8D9A0', color: '#687D31' }}>
+                🎉 ¡Cambios guardados con éxito en la base de datos!
+              </div>
+            )}
+            {error && (
+              <div className="mb-5 p-3.5 rounded-xl text-xs font-semibold text-center" style={{ background: '#FFF0E8', border: '1.5px solid #FFCDB2', color: '#FF6B35' }}>
+                ⚠️ {error}
+              </div>
+            )}
+
             <div className="grid md:grid-cols-2 gap-5">
-              {[
-                { label: 'Nombre del emprendimiento', value: EMP.nombre },
-                { label: 'Emprendedor/a', value: EMP.emprendedor },
-                { label: 'Correo de contacto', value: 'yoghibolivia@gmail.com' },
-                { label: 'Teléfono', value: '+591 70000000' },
-                { label: 'Ciudad', value: EMP.ciudad },
-                { label: 'Horario', value: EMP.horario },
-              ].map(f => (
-                <div key={f.label}>
-                  <label className="block text-xs font-bold mb-1" style={{ color: '#406768' }}>{f.label}</label>
-                  <input
-                    defaultValue={f.value}
-                    className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all duration-200"
-                    style={{ border: '2px solid #E8E6E0', background: '#FAFAFA', color: '#19350C' }}
-                    onFocus={el => (el.target.style.borderColor = '#687D31')}
-                    onBlur={el => (el.target.style.borderColor = '#E8E6E0')}
-                  />
+              <div>
+                <label className="block text-xs font-bold mb-1" style={{ color: '#406768' }}>Nombre del emprendimiento</label>
+                <input
+                  value={formData.name}
+                  onChange={e => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all duration-200"
+                  style={{ border: '2px solid #E8E6E0', background: '#FAFAFA', color: '#19350C' }}
+                  onFocus={el => (el.target.style.borderColor = '#687D31')}
+                  onBlur={el => (el.target.style.borderColor = '#E8E6E0')}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold mb-1" style={{ color: '#406768' }}>Teléfono de contacto</label>
+                <input
+                  value={formData.contactPhone}
+                  onChange={e => setFormData({ ...formData, contactPhone: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all duration-200"
+                  style={{ border: '2px solid #E8E6E0', background: '#FAFAFA', color: '#19350C' }}
+                  onFocus={el => (el.target.style.borderColor = '#687D31')}
+                  onBlur={el => (el.target.style.borderColor = '#E8E6E0')}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold mb-1" style={{ color: '#406768' }}>Correo electrónico (Usuario)</label>
+                <input
+                  value={sessionStorage.getItem('yo_impulso_email') || 'entrepreneur@yoimpulso.bo'}
+                  disabled
+                  className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all duration-200"
+                  style={{ border: '2px solid #E8E6E0', background: '#F5F3EE', color: '#406768', cursor: 'not-allowed' }}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold mb-1" style={{ color: '#406768' }}>Estado de Verificación</label>
+                <div className="mt-1">
+                  <span
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold"
+                    style={{
+                      background: business?.status === 'APPROVED' ? '#F0F5E8' : '#FFF0E8',
+                      color: business?.status === 'APPROVED' ? '#687D31' : '#FF6B35',
+                      border: `1.5px solid ${business?.status === 'APPROVED' ? '#C8D9A0' : '#FFCDB2'}`
+                    }}
+                  >
+                    {business?.status === 'APPROVED' ? '🌟 Aprobado / Publicado' : '⏳ Pendiente de Aprobación'}
+                  </span>
                 </div>
-              ))}
+              </div>
+
               <div className="md:col-span-2">
                 <label className="block text-xs font-bold mb-1" style={{ color: '#406768' }}>Descripción</label>
                 <textarea
-                  defaultValue={EMP.descripcion}
+                  value={formData.description}
+                  onChange={e => setFormData({ ...formData, description: e.target.value })}
                   rows={4}
                   className="w-full px-4 py-3 rounded-xl text-sm outline-none resize-none transition-all duration-200"
                   style={{ border: '2px solid #E8E6E0', background: '#FAFAFA', color: '#19350C' }}
@@ -239,13 +389,29 @@ export default function Gestion() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold mb-1" style={{ color: '#406768' }}>Latitud</label>
-                  <input type="text" defaultValue="-17.3895" className="w-full px-4 py-3 rounded-xl text-sm outline-none" style={{ border: '2px solid #E8E6E0', background: '#FAFAFA', color: '#19350C' }}
-                    onFocus={el => (el.target.style.borderColor = '#687D31')} onBlur={el => (el.target.style.borderColor = '#E8E6E0')} />
+                  <input
+                    type="number"
+                    step="any"
+                    value={formData.latitude}
+                    onChange={e => setFormData({ ...formData, latitude: Number(e.target.value) })}
+                    className="w-full px-4 py-3 rounded-xl text-sm outline-none"
+                    style={{ border: '2px solid #E8E6E0', background: '#FAFAFA', color: '#19350C' }}
+                    onFocus={el => (el.target.style.borderColor = '#687D31')}
+                    onBlur={el => (el.target.style.borderColor = '#E8E6E0')}
+                  />
                 </div>
                 <div>
                   <label className="block text-xs font-bold mb-1" style={{ color: '#406768' }}>Longitud</label>
-                  <input type="text" defaultValue="-66.1568" className="w-full px-4 py-3 rounded-xl text-sm outline-none" style={{ border: '2px solid #E8E6E0', background: '#FAFAFA', color: '#19350C' }}
-                    onFocus={el => (el.target.style.borderColor = '#687D31')} onBlur={el => (el.target.style.borderColor = '#E8E6E0')} />
+                  <input
+                    type="number"
+                    step="any"
+                    value={formData.longitude}
+                    onChange={e => setFormData({ ...formData, longitude: Number(e.target.value) })}
+                    className="w-full px-4 py-3 rounded-xl text-sm outline-none"
+                    style={{ border: '2px solid #E8E6E0', background: '#FAFAFA', color: '#19350C' }}
+                    onFocus={el => (el.target.style.borderColor = '#687D31')}
+                    onBlur={el => (el.target.style.borderColor = '#E8E6E0')}
+                  />
                 </div>
               </div>
             </div>
@@ -275,10 +441,12 @@ export default function Gestion() {
             </div>
 
             <button
-              className="mt-6 px-8 py-3 rounded-xl font-bold text-white transition-all duration-200 hover:opacity-90"
+              onClick={handleSaveChanges}
+              disabled={saveLoading}
+              className="mt-6 px-8 py-3 rounded-xl font-bold text-white transition-all duration-200 hover:opacity-90 disabled:opacity-50"
               style={{ background: '#687D31' }}
             >
-              Guardar cambios
+              {saveLoading ? 'Guardando...' : 'Guardar cambios'}
             </button>
 
             {/* Sellos sub-section */}

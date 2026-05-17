@@ -8,14 +8,44 @@ export default function LoginAdmin() {
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Credenciales incorrectas');
+      }
+
+      // Check role
+      if (data.user.role !== 'ADMIN') {
+        throw new Error('Acceso denegado: No tienes permisos de administrador');
+      }
+
+      sessionStorage.setItem('yo_impulso_logged', '1');
+      sessionStorage.setItem('yo_impulso_token', data.access_token);
+      sessionStorage.setItem('yo_impulso_email', data.user.email);
+      sessionStorage.setItem('yo_impulso_role', data.user.role);
+
       navigate('/admin/panel');
-    }, 1200);
+    } catch (err: any) {
+      setError(err.message || 'Error de conexión con el servidor');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -80,6 +110,19 @@ export default function LoginAdmin() {
               <p className="text-xs" style={{ color: 'rgba(213,211,204,0.7)' }}>Acceso exclusivo por invitación</p>
             </div>
           </div>
+
+          {error && (
+            <div
+              className="p-3.5 rounded-xl text-xs font-semibold mb-4 text-center transition-all duration-200"
+              style={{
+                background: 'rgba(255, 107, 53, 0.15)',
+                border: '1px solid rgba(255, 107, 53, 0.3)',
+                color: '#FF6B35',
+              }}
+            >
+              ⚠️ {error}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
             <div>

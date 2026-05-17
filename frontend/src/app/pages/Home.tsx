@@ -43,12 +43,7 @@ export default function Home() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
         >
-          <div
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-6 self-start"
-            style={{ background: 'rgba(255,255,255,0.12)', color: '#DDEEC7', border: '1px solid rgba(255,255,255,0.24)', backdropFilter: 'blur(8px)' }}
-          >
-            <span>Impulsado por Fundacion Gaia Pacha</span>
-          </div>
+
 
           <h1
             className="text-white mb-5 leading-tight max-w-3xl"
@@ -102,22 +97,7 @@ export default function Home() {
             </Link>
           </div>
 
-          <div className="mt-10 grid grid-cols-3 gap-3 max-w-xl w-full">
-            {[
-              ['10+', 'emprendimientos'],
-              ['7', 'sellos verdes'],
-              ['100%', 'validacion local'],
-            ].map(([value, label]) => (
-              <div
-                key={label}
-                className="rounded-2xl px-4 py-3"
-                style={{ background: 'rgba(255,255,255,0.11)', border: '1px solid rgba(255,255,255,0.18)', backdropFilter: 'blur(8px)' }}
-              >
-                <p className="font-black text-lg" style={{ color: 'white' }}>{value}</p>
-                <p className="text-xs" style={{ color: 'rgba(245,243,238,0.78)' }}>{label}</p>
-              </div>
-            ))}
-          </div>
+
         </motion.div>
       </section>
 
@@ -175,15 +155,23 @@ export default function Home() {
               Cada sello es una verificación real del compromiso sostenible de un emprendimiento.
             </p>
           </div>
-          <div className="flex gap-4 overflow-x-auto pb-4 lg:justify-center" style={{ scrollbarWidth: 'none' }}>
+          <div className="flex gap-4 overflow-x-auto pt-4 pb-8 -mt-4 px-2 lg:justify-center" style={{ scrollbarWidth: 'none' }}>
             {SELLOS_DISPONIBLES.map(sello => (
-              <div
+              <motion.div
                 key={sello.key}
-                className="flex-shrink-0 flex flex-col items-center text-center rounded-2xl p-4"
+                className="flex-shrink-0 flex flex-col items-center text-center rounded-2xl p-4 cursor-pointer"
+                whileHover={{
+                  y: -6,
+                  scale: 1.05,
+                  boxShadow: `0 12px 28px ${sello.color}20`,
+                  borderColor: sello.color
+                }}
+                transition={{ type: 'spring', stiffness: 400, damping: 25 }}
                 style={{
                   background: '#F5F3EE',
                   border: sello.key === 'packaging_sostenible' ? `2px solid ${sello.color}` : '1px solid #E8E6E0',
                   width: '140px',
+                  transition: 'border-color 0.2s ease, background-color 0.2s ease',
                 }}
               >
                 <div
@@ -194,7 +182,7 @@ export default function Home() {
                 </div>
                 <p className="text-xs mb-1" style={{ color: sello.color, fontWeight: 700, lineHeight: 1.3 }}>{sello.nombre}</p>
                 <p className="text-xs leading-snug" style={{ color: '#406768' }}>{SELLOS_DESCRIPCIONES[sello.key]}</p>
-              </div>
+              </motion.div>
             ))}
           </div>
           <div className="text-center mt-8">
@@ -209,75 +197,105 @@ export default function Home() {
         </motion.div>
       </section>
 
-      {/* ─── GUÍAS — formato horizontal compacto ─── */}
-      <section className="py-14 px-6" style={{ background: '#F5F3EE' }}>
+      {/* ─── GUÍAS — formato horizontal en cuadros premium ─── */}
+      <section className="py-16 px-6" style={{ background: '#F5F3EE' }}>
         <motion.div
-          className="max-w-5xl mx-auto flex flex-col gap-4"
+          className="max-w-7xl mx-auto flex flex-col gap-12"
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: false, margin: "-50px" }}
           transition={{ duration: 0.6 }}
         >
           {/* Guía consumidor */}
-          <div
-            className="flex flex-col sm:flex-row sm:items-center gap-4 px-6 py-4 rounded-2xl"
-            style={{ background: 'white', boxShadow: '0 2px 12px rgba(25,53,12,0.06)', minHeight: '80px' }}
-          >
-            <div
-              className="flex items-center gap-2 px-3 py-1.5 rounded-full flex-shrink-0 self-start sm:self-auto"
-              style={{ background: '#F0F5E8', border: '1.5px solid #C8D9A0' }}
-            >
-              <span className="text-sm">🛒</span>
-              <span className="text-xs font-bold whitespace-nowrap" style={{ color: '#687D31' }}>Para consumidores</span>
+          <div>
+            <div className="flex items-center gap-3 mb-6">
+              <div
+                className="flex items-center justify-center w-10 h-10 rounded-2xl text-xl"
+                style={{ background: '#687D31', color: 'white', boxShadow: '0 4px 12px rgba(104,125,49,0.2)' }}
+              >
+                🛒
+              </div>
+              <div>
+                <h3 className="font-extrabold text-lg" style={{ color: '#19350C' }}>¿Cómo comprar de manera consciente?</h3>
+                <p className="text-xs" style={{ color: '#406768' }}>Sigue estos simples pasos para apoyar el cambio</p>
+              </div>
             </div>
-            <div className="flex items-center gap-1 flex-wrap sm:flex-nowrap overflow-x-auto">
+
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
               {[
-                { icon: '🔍', label: 'Busca' },
-                { icon: '🌿', label: 'Descubre' },
-                { icon: '💬', label: 'Conecta' },
-                { icon: '🛒', label: 'Compra consciente' },
-              ].map((step, i, arr) => (
-                <div key={step.label} className="flex items-center gap-1 flex-shrink-0">
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl" style={{ background: '#F0F5E8' }}>
-                    <span className="text-sm">{step.icon}</span>
-                    <span className="text-xs font-semibold whitespace-nowrap" style={{ color: '#19350C' }}>{step.label}</span>
+                { num: '1', title: 'Busca', desc: 'Explora emprendimientos verdes en tu zona.', icon: '🔍' },
+                { num: '2', title: 'Descubre', desc: 'Filtra por categorías y sellos ambientales.', icon: '🌿' },
+                { num: '3', title: 'Conecta', desc: 'Escríbeles directamente por sus redes.', icon: '💬' },
+                { num: '4', title: 'Compra', desc: 'Adquiere productos locales responsables.', icon: '🛒' },
+              ].map((step) => (
+                <motion.div
+                  key={step.num}
+                  className="rounded-2xl p-6 flex flex-col items-center text-center justify-center relative overflow-hidden"
+                  whileHover={{ y: -5, scale: 1.02, backgroundColor: '#E4ECD5', borderColor: '#687D31' }}
+                  style={{
+                    background: '#F0F5E8',
+                    border: '1.5px solid #DDEEC7',
+                    minHeight: '180px',
+                    transition: 'all 0.3s ease',
+                  }}
+                >
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm mb-3 text-white"
+                    style={{ background: '#687D31', border: '1.5px solid #19350C25' }}
+                  >
+                    {step.num}
                   </div>
-                  {i < arr.length - 1 && (
-                    <span className="text-xs mx-0.5" style={{ color: '#D5D3CC' }}>→</span>
-                  )}
-                </div>
+                  <div className="text-xl mb-1">{step.icon}</div>
+                  <h4 className="font-extrabold text-sm mb-1" style={{ color: '#19350C' }}>{step.title}</h4>
+                  <p className="text-xs" style={{ color: '#406768', lineHeight: 1.4 }}>{step.desc}</p>
+                </motion.div>
               ))}
             </div>
           </div>
 
           {/* Guía emprendedor */}
-          <div
-            className="flex flex-col sm:flex-row sm:items-center gap-4 px-6 py-4 rounded-2xl"
-            style={{ background: 'white', boxShadow: '0 2px 12px rgba(25,53,12,0.06)', minHeight: '80px' }}
-          >
-            <div
-              className="flex items-center gap-2 px-3 py-1.5 rounded-full flex-shrink-0 self-start sm:self-auto"
-              style={{ background: '#FFF0E8', border: '1.5px solid #FFCDB2' }}
-            >
-              <span className="text-sm">🚀</span>
-              <span className="text-xs font-bold whitespace-nowrap" style={{ color: '#FF6B35' }}>Para emprendedores</span>
+          <div>
+            <div className="flex items-center gap-3 mb-6">
+              <div
+                className="flex items-center justify-center w-10 h-10 rounded-2xl text-xl"
+                style={{ background: '#FF6B35', color: 'white', boxShadow: '0 4px 12px rgba(255,107,53,0.2)' }}
+              >
+                🚀
+              </div>
+              <div>
+                <h3 className="font-extrabold text-lg" style={{ color: '#19350C' }}>¿Cómo unirse como emprendedor?</h3>
+                <p className="text-xs" style={{ color: '#406768' }}>Impulsa tu marca verde y expande tu impacto</p>
+              </div>
             </div>
-            <div className="flex items-center gap-1 flex-wrap sm:flex-nowrap overflow-x-auto">
+
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
               {[
-                { icon: '📝', label: 'Regístrate' },
-                { icon: '✏️', label: 'Completa tu perfil' },
-                { icon: '📦', label: 'Publica tu catálogo' },
-                { icon: '📬', label: 'Recibe pedidos' },
-              ].map((step, i, arr) => (
-                <div key={step.label} className="flex items-center gap-1 flex-shrink-0">
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl" style={{ background: '#FFF0E8' }}>
-                    <span className="text-sm">{step.icon}</span>
-                    <span className="text-xs font-semibold whitespace-nowrap" style={{ color: '#19350C' }}>{step.label}</span>
+                { num: '1', title: 'Regístrate', desc: 'Crea tu cuenta de emprendedor en la plataforma.', icon: '📝' },
+                { num: '2', title: 'Completa Perfil', desc: 'Añade tu descripción, ubicación y fotos.', icon: '✏️' },
+                { num: '3', title: 'Sube Catálogo', desc: 'Publica tus productos con sus sellos verdes.', icon: '📦' },
+                { num: '4', title: 'Recibe Pedidos', desc: 'Conecta con clientes y concreta tus ventas.', icon: '📬' },
+              ].map((step) => (
+                <motion.div
+                  key={step.num}
+                  className="rounded-2xl p-6 flex flex-col items-center text-center justify-center relative overflow-hidden"
+                  whileHover={{ y: -5, scale: 1.02, backgroundColor: '#FFE4D6', borderColor: '#FF6B35' }}
+                  style={{
+                    background: '#FFF0E8',
+                    border: '1.5px solid #FFD8C2',
+                    minHeight: '180px',
+                    transition: 'all 0.3s ease',
+                  }}
+                >
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm mb-3 text-white"
+                    style={{ background: '#FF6B35', border: '1.5px solid #FF6B3525' }}
+                  >
+                    {step.num}
                   </div>
-                  {i < arr.length - 1 && (
-                    <span className="text-xs mx-0.5" style={{ color: '#D5D3CC' }}>→</span>
-                  )}
-                </div>
+                  <div className="text-xl mb-1">{step.icon}</div>
+                  <h4 className="font-extrabold text-sm mb-1" style={{ color: '#19350C' }}>{step.title}</h4>
+                  <p className="text-xs" style={{ color: '#406768', lineHeight: 1.4 }}>{step.desc}</p>
+                </motion.div>
               ))}
             </div>
           </div>
