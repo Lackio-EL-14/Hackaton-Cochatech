@@ -1,29 +1,43 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router';
 import { Search, X, MapPin, Navigation, ArrowLeft } from 'lucide-react';
-import { EMPRENDIMIENTOS, Emprendimiento } from '../data/emprendimientos';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
+import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
+// Fix standard leaflet icon path issues in Vite
+import iconRetina from 'leaflet/dist/images/marker-icon-2x.png';
+import iconUrl from 'leaflet/dist/images/marker-icon.png';
+import shadowUrl from 'leaflet/dist/images/marker-shadow.png';
+
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: iconRetina,
+  iconUrl: iconUrl,
+  shadowUrl: shadowUrl,
+});
+
+export interface Emprendimiento {
+  id: string;
+  nombre: string;
+  categoria: string;
+  categoriaColor: string;
+  ciudad: string;
+  modalidad: string;
+  imagen: string;
+  descripcion: string;
+  badges: string[];
+  contacto: string;
+  estado: string;
+  latitude: number;
+  longitude: number;
+}
 
 const FILTROS_MODALIDAD = [
-  { key: 'virtual', label: 'Negocio virtual', icon: '💻' },
-  { key: 'venta', label: 'Punto de venta', icon: '🏪' },
-  { key: 'entrega', label: 'Punto de entrega', icon: '📦' },
-  { key: 'ferias', label: 'Ferias sostenibles', icon: '🎪' },
+  { key: 'VIRTUAL', label: 'Negocio virtual', icon: '💻' },
+  { key: 'PRESENCIAL', label: 'Punto de venta/entrega', icon: '🏪' },
+  { key: 'AMBOS', label: 'Híbrido', icon: '🎪' },
 ];
-
-// Map pin positions (normalized 0-100 within the SVG map bounds)
-const PIN_POSITIONS: Record<string, { x: number; y: number }> = {
-  '1': { x: 55, y: 52 },
-  '2': { x: 42, y: 44 },
-  '3': { x: 60, y: 64 },
-  '4': { x: 68, y: 46 },
-  '5': { x: 35, y: 36 },
-  '6': { x: 62, y: 58 },
-  '7': { x: 30, y: 28 },
-  '8': { x: 50, y: 48 },
-  '9': { x: 58, y: 56 },
-  '10': { x: 45, y: 62 },
-};
 
 const CATEGORY_ICONS: Record<string, string> = {
   'Alimentos y bebidas': '🍎',
@@ -34,19 +48,91 @@ const CATEGORY_ICONS: Record<string, string> = {
   'Servicios Vive y Aprende': '🌱',
 };
 
+// Map controller to handle flyTo and Geolocation
+function MapController({ selectedEmp, setUserLoc }: { selectedEmp: Emprendimiento | null, setUserLoc: (loc: L.LatLng) => void }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (selectedEmp && selectedEmp.latitude !== 0) {
+      map.flyTo([selectedEmp.latitude, selectedEmp.longitude], 16, { duration: 1.5 });
+    }
+  }, [selectedEmp, map]);
+
+  useEffect(() => {
+    map.locate({ setView: true, maxZoom: 15 });
+    map.on('locationfound', function (e) {
+      setUserLoc(e.latlng);
+    });
+    map.on('locationerror', function(e) {
+      console.warn('No se pudo obtener la ubicación:', e.message);
+    });
+  }, [map, setUserLoc]);
+
+  return null;
+}
+
+// Generate slight jitter so pins at the exact same location don't overlap completely
+const getJitteredCoord = (lat: number, lng: number, id: string): [number, number] => {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = id.charCodeAt(i) + ((hash << 5) - hash);
+  const jitterLat = ((hash % 100) - 50) * 0.0003; 
+  const jitterLng = (((hash >> 3) % 100) - 50) * 0.0003;
+  
+  // If coordinates are 0 (not set), fallback to Cochabamba center + jitter
+  if (!lat || lat === 0) return [-17.3895 + jitterLat, -66.1568 + jitterLng];
+  return [lat + jitterLat, lng + jitterLng];
+};
+
 export default function MapaVerde() {
   const [search, setSearch] = useState('');
   const [selectedEmp, setSelectedEmp] = useState<Emprendimiento | null>(null);
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
+  const [emprendimientos, setEmprendimientos] = useState<Emprendimiento[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [userLoc, setUserLoc] = useState<L.LatLng | null>(null);
+
+  useEffect(() => {
+    const fetchMapData = async () => {
+      try {
+        const res = await fetch('/api/businesses/search');
+        if (!res.ok) throw new Error('Error fetching map data');
+        const data = await res.json();
+        
+        const mappedData: Emprendimiento[] = data.map((b: any) => ({
+          id: b.id,
+          nombre: b.name,
+          categoria: b.categories && b.categories.length > 0 ? b.categories[0].name : 'Otros',
+          categoriaColor: '#687D31',
+          ciudad: 'Cochabamba',
+          modalidad: b.salesType || 'VIRTUAL',
+          imagen: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=600',
+          descripcion: b.description,
+          badges: ['Verificado', 'Eco-amigable'],
+          contacto: b.contactPhone,
+          estado: b.status,
+          latitude: Number(b.latitude) || 0,
+          longitude: Number(b.longitude) || 0,
+        }));
+        
+        setEmprendimientos(mappedData);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchMapData();
+  }, []);
 
   const toggleFilter = (key: string) => {
     setActiveFilters(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
   };
 
-  const visibleEmps = EMPRENDIMIENTOS.filter(e => {
-    if (e.estado === 'Bloqueado') return false;
+  const visibleEmps = emprendimientos.filter(e => {
+    if (e.estado === 'Bloqueado' || e.estado === 'REJECTED') return false;
     const q = search.toLowerCase();
     if (q && !e.nombre.toLowerCase().includes(q) && !e.categoria.toLowerCase().includes(q)) return false;
+    if (activeFilters.length > 0 && !activeFilters.includes(e.modalidad)) return false;
     return true;
   });
 
@@ -54,8 +140,8 @@ export default function MapaVerde() {
     <div className="flex h-[calc(100vh-64px)]" style={{ background: '#F5F3EE' }}>
       {/* Left panel */}
       <div
-        className="w-80 flex-shrink-0 flex flex-col border-r overflow-hidden"
-        style={{ background: 'white', borderColor: '#E8E6E0' }}
+        className="w-80 flex-shrink-0 flex flex-col border-r overflow-hidden relative z-10"
+        style={{ background: 'white', borderColor: '#E8E6E0', boxShadow: '2px 0 12px rgba(0,0,0,0.05)' }}
       >
         {/* Header */}
         <div className="p-4 border-b" style={{ borderColor: '#E8E6E0' }}>
@@ -118,112 +204,126 @@ export default function MapaVerde() {
 
         {/* List */}
         <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
-          <p className="text-xs" style={{ color: '#406768' }}>
-            <span className="font-bold" style={{ color: '#19350C' }}>{visibleEmps.length}</span> emprendimientos en el mapa
-          </p>
-          {visibleEmps.map(e => (
-            <button
-              key={e.id}
-              onClick={() => setSelectedEmp(selectedEmp?.id === e.id ? null : e)}
-              className="flex items-center gap-3 p-3 rounded-xl text-left transition-all duration-200 hover:shadow-md w-full"
-              style={{
-                background: selectedEmp?.id === e.id ? '#F0F5E8' : '#F5F3EE',
-                border: `1px solid ${selectedEmp?.id === e.id ? '#687D31' : '#E8E6E0'}`,
-              }}
-            >
-              <div
-                className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm"
-                style={{ background: '#687D31' }}
-              >
-                {CATEGORY_ICONS[e.categoria] || '🌱'}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold truncate" style={{ color: '#19350C' }}>{e.nombre}</p>
-                <p className="text-xs truncate" style={{ color: '#406768' }}>{e.ciudad} · {e.modalidad}</p>
-              </div>
-            </button>
-          ))}
+          {loading ? (
+            <div className="flex justify-center py-10">
+              <div className="w-8 h-8 border-4 border-dashed rounded-full animate-spin" style={{ borderColor: '#687D31' }} />
+            </div>
+          ) : (
+            <>
+              <p className="text-xs" style={{ color: '#406768' }}>
+                <span className="font-bold" style={{ color: '#19350C' }}>{visibleEmps.length}</span> emprendimientos en el mapa
+              </p>
+              {visibleEmps.map(e => (
+                <button
+                  key={e.id}
+                  onClick={() => setSelectedEmp(selectedEmp?.id === e.id ? null : e)}
+                  className="flex items-center gap-3 p-3 rounded-xl text-left transition-all duration-200 hover:shadow-md w-full"
+                  style={{
+                    background: selectedEmp?.id === e.id ? '#F0F5E8' : '#F5F3EE',
+                    border: `1px solid ${selectedEmp?.id === e.id ? '#687D31' : '#E8E6E0'}`,
+                  }}
+                >
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm"
+                    style={{ background: '#687D31' }}
+                  >
+                    {CATEGORY_ICONS[e.categoria] || '🌱'}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold truncate" style={{ color: '#19350C' }}>{e.nombre}</p>
+                    <p className="text-xs truncate" style={{ color: '#406768' }}>{e.ciudad} · {e.modalidad}</p>
+                  </div>
+                </button>
+              ))}
+              {visibleEmps.length === 0 && (
+                <div className="text-center py-6">
+                  <p className="text-xs text-gray-500">No se encontraron resultados.</p>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
 
       {/* Map area */}
-      <div className="flex-1 relative overflow-hidden">
-        {/* Map background - stylized Cochabamba */}
-        <div
-          className="absolute inset-0"
-          style={{ background: 'linear-gradient(160deg, #B8D4C0 0%, #A8C8B8 30%, #9DBFB0 60%, #88AFA0 100%)' }}
+      <div className="flex-1 relative overflow-hidden z-0">
+        <MapContainer 
+          center={[-17.3895, -66.1568]} 
+          zoom={13} 
+          style={{ height: '100%', width: '100%' }}
+          zoomControl={true}
         >
-          {/* Terrain texture with SVG */}
-          <svg width="100%" height="100%" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice">
-            {/* Roads */}
-            <path d="M100 300 Q 250 280 400 300 Q 550 320 700 300" stroke="white" strokeWidth="3" fill="none" opacity="0.5" />
-            <path d="M400 100 Q 390 250 400 400 Q 410 500 400 580" stroke="white" strokeWidth="2.5" fill="none" opacity="0.5" />
-            <path d="M200 200 Q 300 250 400 300 Q 500 350 600 400" stroke="white" strokeWidth="2" fill="none" opacity="0.4" />
-            <path d="M150 400 Q 270 380 400 400 Q 530 420 650 390" stroke="white" strokeWidth="2" fill="none" opacity="0.3" />
-            {/* Parks/green zones */}
-            <ellipse cx="350" cy="280" rx="60" ry="40" fill="#7FB88A" opacity="0.4" />
-            <ellipse cx="500" cy="350" rx="45" ry="30" fill="#7FB88A" opacity="0.3" />
-            <ellipse cx="250" cy="320" rx="35" ry="25" fill="#7FB88A" opacity="0.3" />
-            {/* Water */}
-            <ellipse cx="400" cy="480" rx="80" ry="30" fill="#6FA9BB" opacity="0.35" />
-            {/* City blocks */}
-            {[...Array(20)].map((_, i) => (
-              <rect
-                key={i}
-                x={150 + (i % 5) * 100 + Math.sin(i) * 10}
-                y={150 + Math.floor(i / 5) * 80 + Math.cos(i) * 8}
-                width={50 + Math.random() * 30}
-                height={35 + Math.random() * 20}
-                rx="3"
-                fill="white"
-                opacity="0.12"
-              />
-            ))}
-            {/* Labels */}
-            <text x="380" y="300" fill="#19350C" fontSize="14" fontWeight="bold" opacity="0.7">Cochabamba</text>
-            <text x="380" y="315" fill="#406768" fontSize="10" opacity="0.6">Centro</text>
-            <text x="250" y="200" fill="#19350C" fontSize="11" opacity="0.6">Quillacollo</text>
-            <text x="520" y="180" fill="#19350C" fontSize="11" opacity="0.6">Sacaba</text>
-          </svg>
+          {/* Base Map Layer using a clean, light theme compatible with the green aesthetic */}
+          <TileLayer
+            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+          />
+          
+          <MapController selectedEmp={selectedEmp} setUserLoc={setUserLoc} />
 
-          {/* Pin markers */}
-          {visibleEmps.map(e => {
-            const pos = PIN_POSITIONS[e.id] || { x: 50, y: 50 };
+          {/* User Location Marker */}
+          {userLoc && (
+            <Marker 
+              position={userLoc}
+              icon={L.divIcon({
+                html: `<div style="background:#4285F4; width:16px; height:16px; border-radius:50%; border:3px solid white; box-shadow:0 0 10px rgba(0,0,0,0.3)"></div>`,
+                className: '',
+                iconSize: [16, 16],
+                iconAnchor: [8, 8]
+              })}
+            />
+          )}
+
+          {/* Emprendimiento Markers */}
+          {!loading && visibleEmps.map(e => {
             const isSelected = selectedEmp?.id === e.id;
+            const emoji = CATEGORY_ICONS[e.categoria] || '🌱';
+            
+            const iconHtml = `
+              <div style="
+                background: ${isSelected ? '#FF6B35' : '#19350C'};
+                color: white;
+                border-radius: 50%;
+                width: 32px;
+                height: 32px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 16px;
+                box-shadow: ${isSelected ? '0 4px 16px rgba(255,107,53,0.5)' : '0 4px 12px rgba(25,53,12,0.4)'};
+                border: 2px solid white;
+                transform: ${isSelected ? 'scale(1.2)' : 'scale(1)'};
+                transition: transform 0.2s;
+              ">
+                ${emoji}
+              </div>
+            `;
+            
+            const customIcon = L.divIcon({
+              html: iconHtml,
+              className: '',
+              iconSize: [32, 32],
+              iconAnchor: [16, 16], // center
+            });
+
             return (
-              <button
+              <Marker
                 key={e.id}
-                onClick={() => setSelectedEmp(selectedEmp?.id === e.id ? null : e)}
-                className="absolute transition-all duration-300 hover:scale-110 z-10"
-                style={{ left: `${pos.x}%`, top: `${pos.y}%`, transform: `translate(-50%, -100%) scale(${isSelected ? 1.2 : 1})` }}
-                title={e.nombre}
-              >
-                <div
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-white text-xs font-bold shadow-lg"
-                  style={{
-                    background: isSelected ? '#FF6B35' : '#19350C',
-                    boxShadow: isSelected ? '0 4px 16px rgba(255,107,53,0.5)' : '0 4px 12px rgba(25,53,12,0.4)',
-                  }}
-                >
-                  <span>{CATEGORY_ICONS[e.categoria] || '🌱'}</span>
-                  {isSelected && <span>{e.nombre}</span>}
-                </div>
-                <div
-                  className="w-2 h-2 mx-auto rounded-full"
-                  style={{ background: isSelected ? '#FF6B35' : '#19350C', marginTop: '-3px' }}
-                />
-              </button>
+                position={getJitteredCoord(e.latitude, e.longitude, e.id)}
+                icon={customIcon}
+                eventHandlers={{ click: () => setSelectedEmp(isSelected ? null : e) }}
+              />
             );
           })}
-        </div>
+        </MapContainer>
 
-        {/* Popup card */}
+        {/* Popup card overlay */}
         {selectedEmp && (
           <div
-            className="absolute bottom-6 right-6 w-80 rounded-2xl overflow-hidden z-20"
+            className="absolute bottom-6 right-6 w-80 rounded-2xl overflow-hidden z-[1000]"
             style={{ background: 'white', boxShadow: '0 8px 32px rgba(25,53,12,0.2)' }}
           >
-            <div className="relative h-32 overflow-hidden">
+            <div className="relative h-32 overflow-hidden bg-gray-100">
               <ImageWithFallback
                 src={selectedEmp.imagen}
                 alt={selectedEmp.nombre}
@@ -231,7 +331,7 @@ export default function MapaVerde() {
               />
               <button
                 onClick={() => setSelectedEmp(null)}
-                className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center text-white"
+                className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center text-white transition-opacity hover:bg-black/70"
                 style={{ background: 'rgba(0,0,0,0.5)' }}
               >
                 <X size={14} />
@@ -265,25 +365,25 @@ export default function MapaVerde() {
                   Ver perfil
                 </Link>
                 <a
-                  href="https://maps.google.com"
+                  href={`https://maps.google.com/?q=${selectedEmp.latitude},${selectedEmp.longitude}`}
                   target="_blank"
                   rel="noreferrer"
                   className="flex items-center justify-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold transition-opacity hover:opacity-90"
                   style={{ background: '#F0F5E8', color: '#406768' }}
                 >
-                  <Navigation size={12} /> Cómo llegar
+                  <Navigation size={12} /> Llegar
                 </a>
               </div>
             </div>
           </div>
         )}
 
-        {/* Map legend */}
+        {/* Map legend overlay */}
         <div
-          className="absolute top-4 left-4 px-3 py-2 rounded-xl z-20"
+          className="absolute top-4 right-4 px-3 py-2 rounded-xl z-[1000]"
           style={{ background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(8px)', boxShadow: '0 2px 12px rgba(25,53,12,0.1)' }}
         >
-          <p className="text-xs font-bold mb-1.5" style={{ color: '#19350C' }}>Leyenda</p>
+          <p className="text-xs font-bold mb-1.5" style={{ color: '#19350C' }}>Categorías</p>
           {Object.entries(CATEGORY_ICONS).slice(0, 4).map(([cat, icon]) => (
             <div key={cat} className="flex items-center gap-1.5 mb-1">
               <span style={{ fontSize: '10px' }}>{icon}</span>
@@ -295,3 +395,4 @@ export default function MapaVerde() {
     </div>
   );
 }
+
