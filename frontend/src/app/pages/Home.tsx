@@ -26,39 +26,45 @@ export default function Home() {
       <section
         className="relative overflow-hidden"
         style={{
-          background: `linear-gradient(135deg, rgba(25,53,12,0.85) 0%, rgba(45,90,26,0.75) 50%, rgba(64,103,104,0.85) 100%), url('/hero-bg.jpg') center/cover no-repeat`,
-          minHeight: '580px'
+          backgroundImage: `
+            linear-gradient(90deg, rgba(25,53,12,0.94) 0%, rgba(25,53,12,0.82) 36%, rgba(25,53,12,0.38) 62%, rgba(25,53,12,0.18) 100%),
+            linear-gradient(180deg, rgba(25,53,12,0.15) 0%, rgba(25,53,12,0.62) 100%),
+            url('/hero-bg.png')
+          `,
+          backgroundPosition: 'center',
+          backgroundSize: 'cover',
+          backgroundRepeat: 'no-repeat',
+          minHeight: '650px'
         }}
       >
-        {/* Organic blobs */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-20 -right-20 w-80 h-80 rounded-full opacity-10" style={{ background: '#6FA9BB' }} />
-          <div className="absolute bottom-10 -left-10 w-60 h-60 rounded-full opacity-10" style={{ background: '#687D31' }} />
-          <div className="absolute top-1/2 left-1/3 w-40 h-40 rounded-full opacity-5" style={{ background: '#FF6B35' }} />
-        </div>
-
         <motion.div
-          className="relative max-w-3xl mx-auto px-6 py-20 lg:py-28 flex flex-col items-center text-center"
+          className="relative max-w-7xl mx-auto px-6 py-20 lg:py-28 min-h-[650px] flex flex-col justify-center"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
         >
+          <div
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-6 self-start"
+            style={{ background: 'rgba(255,255,255,0.12)', color: '#DDEEC7', border: '1px solid rgba(255,255,255,0.24)', backdropFilter: 'blur(8px)' }}
+          >
+            <span>Impulsado por Fundacion Gaia Pacha</span>
+          </div>
 
           <h1
-            className="text-white mb-4 leading-tight"
-            style={{ fontSize: 'clamp(2rem, 5vw, 3.25rem)', fontWeight: 800, lineHeight: 1.15 }}
+            className="text-white mb-5 leading-tight max-w-3xl"
+            style={{ fontSize: 'clamp(2.45rem, 5.6vw, 4.75rem)', fontWeight: 900, lineHeight: 1.04, textShadow: '0 4px 28px rgba(0,0,0,0.28)' }}
           >
             Descubre emprendimientos verdes que transforman{' '}
             <span style={{ color: '#6FA9BB' }}>Bolivia</span>
           </h1>
-          <p className="mb-8 text-base leading-relaxed max-w-xl" style={{ color: 'rgba(245,243,238,0.85)' }}>
+          <p className="mb-8 text-base leading-relaxed max-w-xl" style={{ color: 'rgba(245,243,238,0.9)' }}>
             Conecta con marcas sostenibles, productos responsables y proyectos locales que cuidan el planeta.
           </p>
 
           {/* Search bar */}
           <div
-            className="flex items-center gap-3 px-4 py-3 rounded-2xl mb-8 w-full max-w-xl"
-            style={{ background: 'white', boxShadow: '0 4px 24px rgba(0,0,0,0.15)' }}
+            className="flex items-center gap-3 px-4 py-3 rounded-2xl mb-8 w-full max-w-2xl"
+            style={{ background: 'rgba(255,255,255,0.96)', boxShadow: '0 16px 48px rgba(0,0,0,0.22)', backdropFilter: 'blur(10px)' }}
           >
             <Search size={20} style={{ color: '#687D31', flexShrink: 0 }} />
             <input
@@ -79,7 +85,7 @@ export default function Home() {
           </div>
 
           {/* CTAs */}
-          <div className="flex flex-wrap gap-3 justify-center">
+          <div className="flex flex-wrap gap-3">
             <Link
               to="/emprendimientos"
               className="px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200 hover:opacity-90 inline-flex items-center gap-2"
@@ -94,6 +100,23 @@ export default function Home() {
             >
               <MapPin size={16} /> Ver mapa verde
             </Link>
+          </div>
+
+          <div className="mt-10 grid grid-cols-3 gap-3 max-w-xl w-full">
+            {[
+              ['10+', 'emprendimientos'],
+              ['7', 'sellos verdes'],
+              ['100%', 'validacion local'],
+            ].map(([value, label]) => (
+              <div
+                key={label}
+                className="rounded-2xl px-4 py-3"
+                style={{ background: 'rgba(255,255,255,0.11)', border: '1px solid rgba(255,255,255,0.18)', backdropFilter: 'blur(8px)' }}
+              >
+                <p className="font-black text-lg" style={{ color: 'white' }}>{value}</p>
+                <p className="text-xs" style={{ color: 'rgba(245,243,238,0.78)' }}>{label}</p>
+              </div>
+            ))}
           </div>
         </motion.div>
       </section>
