@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router';
-import { Eye, EyeOff, Shield, Rocket } from 'lucide-react';
+import { Link, useNavigate } from 'react-router';
+import { Eye, EyeOff, Shield, Rocket, ArrowLeft } from 'lucide-react';
 
 export default function LoginAdmin() {
   const navigate = useNavigate();
@@ -40,6 +40,17 @@ export default function LoginAdmin() {
       </div>
 
       <div className="w-full max-w-sm relative z-10">
+        {/* Back button */}
+        <div className="mb-4">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-1 text-sm transition-all hover:underline"
+            style={{ color: 'rgba(213,211,204,0.75)' }}
+          >
+            <ArrowLeft size={14} /> Inicio
+          </Link>
+        </div>
+
         {/* Logo */}
         <div className="flex items-center justify-center gap-2 mb-8">
           <div className="flex items-center justify-center w-10 h-10 rounded-xl" style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)' }}>

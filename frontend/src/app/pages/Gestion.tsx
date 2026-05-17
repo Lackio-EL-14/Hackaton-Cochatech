@@ -1,18 +1,17 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
-import { Edit, Package, Inbox, BarChart2, Plus, X, ShoppingBag, TrendingUp, Users, Star, Lock } from 'lucide-react';
+import { Edit, Package, Bell, BarChart2, Plus, X, ShoppingBag, TrendingUp, Users, Star, Lock } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { EMPRENDIMIENTOS } from '../data/emprendimientos';
-import { TurtleMascot } from '../components/TurtleMascot';
+import { EMPRENDIMIENTOS, SELLOS_DISPONIBLES } from '../data/emprendimientos';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 
-const EMP = EMPRENDIMIENTOS[0]; // Yoghi Probit (Premium)
+const EMP = EMPRENDIMIENTOS[0];
 const PLAN: 'Gratis' | 'Premium' = 'Premium';
 
 const TABS = [
   { key: 'perfil', label: 'Editar perfil', icon: <Edit size={16} /> },
   { key: 'catalogo', label: 'Catálogo', icon: <Package size={16} /> },
-  { key: 'bandeja', label: 'Bandeja de entrada', icon: <Inbox size={16} /> },
+  { key: 'notificaciones', label: 'Notificaciones', icon: <Bell size={16} /> },
   { key: 'ventas', label: 'Módulo de Ventas', icon: <BarChart2 size={16} /> },
 ];
 
@@ -36,28 +35,45 @@ const CATEGORIA_DATA = [
 
 const PIE_COLORS = ['#687D31', '#6FA9BB', '#FF6B35'];
 
-const MENSAJES = [
-  {
-    id: 'm1', tipo: 'compra', nombre: 'Valentina S.',
-    avatar: '👩', mensaje: 'Quiero 3 yogures naturales', tiempo: 'hace 10 min',
-    leido: false, producto: 'Yogur natural 500g', cantidad: 3, total: 54, estado: 'Pendiente',
-  },
-  {
-    id: 'm2', tipo: 'admin', nombre: 'Admin Yo Impulso',
-    avatar: '🛡️', mensaje: 'Tu perfil ha sido verificado correctamente.', tiempo: 'hace 2h',
-    leido: true,
-  },
-  {
-    id: 'm3', tipo: 'compra', nombre: 'Carlos M.',
-    avatar: '👨', mensaje: 'Solicito el combo familiar', tiempo: 'hace 1 día',
-    leido: true, producto: 'Combo familiar x3', cantidad: 2, total: 110, estado: 'Confirmado',
-  },
+type Notificacion = {
+  id: string;
+  tipo: 'compra' | 'sello_otorgado' | 'sello_rechazado' | 'admin' | 'alianza' | 'verificado';
+  titulo: string;
+  descripcion: string;
+  tiempo: string;
+  leida: boolean;
+};
+
+const NOTIFICACIONES_INICIAL: Notificacion[] = [
+  { id: 'n1', tipo: 'compra', titulo: 'Nueva solicitud de compra', descripcion: 'Un cliente está interesado en Yogur natural 500g', tiempo: 'hace 10 min', leida: false },
+  { id: 'n2', tipo: 'sello_otorgado', titulo: 'Sello otorgado', descripcion: 'Tu solicitud de sello Producción Limpia fue aprobada', tiempo: 'hace 2h', leida: false },
+  { id: 'n3', tipo: 'verificado', titulo: 'Perfil verificado', descripcion: 'Tu emprendimiento fue aprobado en la plataforma', tiempo: 'hace 1 día', leida: true },
+  { id: 'n4', tipo: 'admin', titulo: 'Mensaje del administrador', descripcion: 'El equipo de Yo Impulso te envió un mensaje', tiempo: 'hace 2 días', leida: true },
+  { id: 'n5', tipo: 'alianza', titulo: 'Nueva propuesta de alianza', descripcion: 'EcoTejidos Bolivia quiere conectar contigo', tiempo: 'hace 3 días', leida: false },
+  { id: 'n6', tipo: 'sello_rechazado', titulo: 'Sello rechazado', descripcion: 'Tu solicitud de sello Economía Circular requiere más evidencia', tiempo: 'hace 4 días', leida: true },
+];
+
+const NOTIF_TIPOS = {
+  compra:         { icono: '🛒', color: '#FF6B35', bg: '#FFF0E8' },
+  sello_otorgado: { icono: '✅', color: '#687D31', bg: '#F0F5E8' },
+  sello_rechazado:{ icono: '❌', color: '#EF4444', bg: '#FEF2F2' },
+  admin:          { icono: '📢', color: '#406768', bg: '#EEF5F8' },
+  alianza:        { icono: '🤝', color: '#FF6B35', bg: '#FFF0E8' },
+  verificado:     { icono: '🌟', color: '#19350C', bg: '#E8EDD8' },
+};
+
+const NOTIF_FILTROS = [
+  { key: 'todas', label: 'Todas' },
+  { key: 'no_leidas', label: 'No leídas' },
+  { key: 'solicitudes', label: 'Solicitudes' },
+  { key: 'sellos', label: 'Sellos' },
+  { key: 'alianzas', label: 'Alianzas' },
 ];
 
 function UpgradeBanner({ mensaje, descripcion }: { mensaje: string; descripcion: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 px-8 text-center">
-      <TurtleMascot size={130} variant="chart" className="mb-4" />
+      <div className="text-6xl mb-4">🌱</div>
       <div className="flex items-center gap-2 mb-3">
         <Lock size={18} style={{ color: '#FF6B35' }} />
         <h3 style={{ color: '#19350C', fontWeight: 800, fontSize: '1.2rem' }}>Solo Plan Premium</h3>
@@ -65,7 +81,7 @@ function UpgradeBanner({ mensaje, descripcion }: { mensaje: string; descripcion:
       <p className="mb-2 font-bold" style={{ color: '#19350C' }}>{mensaje}</p>
       <p className="text-sm mb-6 max-w-sm" style={{ color: '#406768' }}>{descripcion}</p>
       <div className="flex flex-col gap-2 text-sm text-left mb-6 w-full max-w-xs">
-        {['Catálogo de productos ilimitado', 'Bandeja de pedidos', 'Estadísticas de ventas', 'Asesorías personalizadas'].map(b => (
+        {['Catálogo de productos ilimitado', 'Centro de notificaciones', 'Estadísticas de ventas', 'Asesorías personalizadas'].map(b => (
           <div key={b} className="flex items-center gap-2" style={{ color: '#406768' }}>
             <span style={{ color: '#687D31', fontWeight: 700 }}>✓</span> {b}
           </div>
@@ -83,9 +99,24 @@ function UpgradeBanner({ mensaje, descripcion }: { mensaje: string; descripcion:
 
 export default function Gestion() {
   const [activeTab, setActiveTab] = useState('perfil');
-  const [selectedMsg, setSelectedMsg] = useState<typeof MENSAJES[0] | null>(MENSAJES[0]);
   const [stock, setStock] = useState<Record<string, number>>({ p1: 45, p2: 30, p3: 15 });
   const [showAddProduct, setShowAddProduct] = useState(false);
+  const [showSelloModal, setShowSelloModal] = useState<string | null>(null);
+  const [notifs, setNotifs] = useState<Notificacion[]>(NOTIFICACIONES_INICIAL);
+  const [notifFiltro, setNotifFiltro] = useState('todas');
+
+  const notifsFiltradas = notifs.filter(n => {
+    if (notifFiltro === 'no_leidas') return !n.leida;
+    if (notifFiltro === 'solicitudes') return n.tipo === 'compra';
+    if (notifFiltro === 'sellos') return n.tipo === 'sello_otorgado' || n.tipo === 'sello_rechazado';
+    if (notifFiltro === 'alianzas') return n.tipo === 'alianza';
+    return true;
+  });
+
+  const noLeidasCount = notifs.filter(n => !n.leida).length;
+
+  const marcarTodasLeidas = () => setNotifs(prev => prev.map(n => ({ ...n, leida: true })));
+  const marcarLeida = (id: string) => setNotifs(prev => prev.map(n => n.id === id ? { ...n, leida: true } : n));
 
   return (
     <div style={{ background: '#F5F3EE', minHeight: '100vh' }}>
@@ -120,13 +151,21 @@ export default function Gestion() {
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all duration-200 flex-1 justify-center"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all duration-200 flex-1 justify-center relative"
               style={{
                 background: activeTab === tab.key ? '#19350C' : 'transparent',
                 color: activeTab === tab.key ? 'white' : '#406768',
               }}
             >
               {tab.icon} {tab.label}
+              {tab.key === 'notificaciones' && noLeidasCount > 0 && (
+                <span
+                  className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                  style={{ background: '#FF6B35', fontSize: '0.65rem' }}
+                >
+                  {noLeidasCount}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -167,14 +206,192 @@ export default function Gestion() {
                 />
               </div>
             </div>
+
+            {/* Ubicación sub-section */}
+            <div className="mt-8 pt-6 border-t" style={{ borderColor: '#E8E6E0' }}>
+              <h3 className="font-bold mb-4" style={{ color: '#19350C', fontSize: '0.95rem' }}>Ubicación de tu emprendimiento</h3>
+              <div
+                className="rounded-2xl overflow-hidden relative mb-4"
+                style={{ height: '260px', background: 'linear-gradient(160deg,#B8D4C0,#9DBFB0)' }}
+              >
+                <svg width="100%" height="100%" viewBox="0 0 600 260" preserveAspectRatio="xMidYMid slice">
+                  <path d="M50 130 Q200 110 300 130 Q420 150 550 130" stroke="white" strokeWidth="3" fill="none" opacity="0.5" />
+                  <path d="M300 20 Q295 100 300 180 Q305 220 300 255" stroke="white" strokeWidth="2.5" fill="none" opacity="0.5" />
+                  {[...Array(15)].map((_, i) => (
+                    <rect key={i} x={80 + (i % 5) * 100} y={40 + Math.floor(i / 5) * 70} width={55} height={38} rx="4" fill="white" opacity="0.12" />
+                  ))}
+                  <text x="270" y="138" fill="#19350C" fontSize="16" fontWeight="bold" opacity="0.7">Cochabamba</text>
+                </svg>
+                <div className="absolute" style={{ left: '48%', top: '42%', transform: 'translate(-50%,-100%)' }}>
+                  <div className="flex flex-col items-center cursor-grab">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-xl" style={{ background: '#FF6B35', boxShadow: '0 4px 16px rgba(255,107,53,0.5)' }}>
+                      📍
+                    </div>
+                    <div className="w-2 h-2 rounded-full mt-0.5" style={{ background: '#FF6B35' }} />
+                  </div>
+                </div>
+                <div className="absolute bottom-3 right-3 text-xs px-2 py-1 rounded-lg" style={{ background: 'rgba(255,255,255,0.85)', color: '#406768' }}>
+                  Arrastra el pin para ajustar
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold mb-1" style={{ color: '#406768' }}>Latitud</label>
+                  <input type="text" defaultValue="-17.3895" className="w-full px-4 py-3 rounded-xl text-sm outline-none" style={{ border: '2px solid #E8E6E0', background: '#FAFAFA', color: '#19350C' }}
+                    onFocus={el => (el.target.style.borderColor = '#687D31')} onBlur={el => (el.target.style.borderColor = '#E8E6E0')} />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold mb-1" style={{ color: '#406768' }}>Longitud</label>
+                  <input type="text" defaultValue="-66.1568" className="w-full px-4 py-3 rounded-xl text-sm outline-none" style={{ border: '2px solid #E8E6E0', background: '#FAFAFA', color: '#19350C' }}
+                    onFocus={el => (el.target.style.borderColor = '#687D31')} onBlur={el => (el.target.style.borderColor = '#E8E6E0')} />
+                </div>
+              </div>
+            </div>
+
+            {/* Redes sociales */}
+            <div className="mt-6 pt-6 border-t" style={{ borderColor: '#E8E6E0' }}>
+              <h3 className="font-bold mb-3" style={{ color: '#19350C', fontSize: '0.95rem' }}>Redes sociales</h3>
+              <div className="flex flex-col gap-2">
+                {[
+                  { label: '📸 Instagram', value: '@yoghibolivia' },
+                  { label: '🎵 TikTok', value: '@yoghibolivia' },
+                  { label: '👥 Facebook', value: 'yoghibolivia' },
+                ].map(r => (
+                  <div key={r.label} className="flex items-center gap-2">
+                    <span className="w-28 text-xs font-semibold flex-shrink-0" style={{ color: '#406768' }}>{r.label}</span>
+                    <input
+                      type="text"
+                      defaultValue={r.value}
+                      className="flex-1 px-3 py-2 rounded-lg text-sm outline-none transition-all duration-200"
+                      style={{ border: '1.5px solid #E8E6E0', background: '#FAFAFA', color: '#19350C' }}
+                      onFocus={el => (el.target.style.borderColor = '#687D31')}
+                      onBlur={el => (el.target.style.borderColor = '#E8E6E0')}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <button
               className="mt-6 px-8 py-3 rounded-xl font-bold text-white transition-all duration-200 hover:opacity-90"
               style={{ background: '#687D31' }}
             >
               Guardar cambios
             </button>
+
+            {/* Sellos sub-section */}
+            <div className="mt-8 pt-8 border-t" style={{ borderColor: '#E8E6E0' }}>
+              <h3 className="font-bold mb-5" style={{ color: '#19350C', fontSize: '1rem' }}>Mis sellos y verificaciones</h3>
+
+              {EMP.sellos.obtenidos.length > 0 && (
+                <div className="mb-5">
+                  <p className="text-xs font-bold mb-3 uppercase tracking-wide" style={{ color: '#687D31' }}>Sellos obtenidos</p>
+                  <div className="flex flex-wrap gap-2">
+                    {EMP.sellos.obtenidos.map(s => {
+                      const sello = SELLOS_DISPONIBLES.find(sd => sd.key === s.key);
+                      if (!sello) return null;
+                      return (
+                        <div key={s.key} className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: sello.bg, border: `1.5px solid ${sello.color}50` }}>
+                          <span className="text-base">{sello.icono}</span>
+                          <div>
+                            <p className="text-xs font-bold" style={{ color: sello.color }}>{sello.nombre}</p>
+                            <p className="text-xs" style={{ color: '#406768' }}>Otorgado: {s.fechaOtorgamiento}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {EMP.sellos.enRevision.length > 0 && (
+                <div className="mb-5">
+                  <p className="text-xs font-bold mb-3 uppercase tracking-wide" style={{ color: '#D97706' }}>En revisión</p>
+                  <div className="flex flex-wrap gap-2">
+                    {EMP.sellos.enRevision.map(s => {
+                      const sello = SELLOS_DISPONIBLES.find(sd => sd.key === s.key);
+                      if (!sello) return null;
+                      return (
+                        <div key={s.key} className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: '#FEF3C7', border: '1.5px solid #FCD34D' }}>
+                          <span className="text-base">{sello.icono}</span>
+                          <div>
+                            <p className="text-xs font-bold" style={{ color: '#D97706' }}>{sello.nombre}</p>
+                            <p className="text-xs" style={{ color: '#92400E' }}>En revisión desde: {s.fechaEnvio}</p>
+                          </div>
+                          <span className="ml-1 px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: '#FCD34D', color: '#92400E' }}>En revisión</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <p className="text-xs font-bold mb-3 uppercase tracking-wide" style={{ color: '#406768' }}>Solicitar verificación</p>
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {SELLOS_DISPONIBLES
+                    .filter(sd => !EMP.sellos.obtenidos.find(s => s.key === sd.key) && !EMP.sellos.enRevision.find(s => s.key === sd.key))
+                    .map(sello => (
+                      <div key={sello.key} className="rounded-xl p-3 flex flex-col gap-2" style={{ background: '#F5F3EE', border: '1px solid #E8E6E0' }}>
+                        <div className="flex items-center gap-2">
+                          <span className="text-2xl" style={{ filter: 'grayscale(1)', opacity: 0.5 }}>{sello.icono}</span>
+                          <p className="text-xs font-bold" style={{ color: '#406768' }}>{sello.nombre}</p>
+                        </div>
+                        <p className="text-xs" style={{ color: '#D5D3CC' }}>{sello.descripcion}</p>
+                        <button
+                          onClick={() => setShowSelloModal(sello.key)}
+                          className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-opacity hover:opacity-80"
+                          style={{ background: '#E8E6E0', color: '#406768' }}
+                        >
+                          Solicitar verificación
+                        </button>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            </div>
           </div>
         )}
+
+        {/* Sello request modal */}
+        {showSelloModal && (() => {
+          const sello = SELLOS_DISPONIBLES.find(s => s.key === showSelloModal);
+          if (!sello) return null;
+          return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }}>
+              <div className="rounded-3xl p-6 w-full max-w-md" style={{ background: 'white' }}>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">{sello.icono}</span>
+                    <h3 className="font-bold" style={{ color: '#19350C' }}>Solicitar: {sello.nombre}</h3>
+                  </div>
+                  <button onClick={() => setShowSelloModal(null)} style={{ color: '#406768' }}><X size={20} /></button>
+                </div>
+                <div className="rounded-xl p-3 mb-4" style={{ background: sello.bg }}>
+                  <p className="text-xs leading-relaxed" style={{ color: sello.color }}><strong>Requisito:</strong> {sello.descripcion}</p>
+                </div>
+                <div className="flex flex-col gap-4">
+                  <div>
+                    <label className="block text-xs font-bold mb-1.5" style={{ color: '#406768' }}>Describe brevemente tu proceso</label>
+                    <textarea rows={3} placeholder="¿Cómo cumples con este criterio de sostenibilidad?" className="w-full px-4 py-3 rounded-xl text-sm outline-none resize-none" style={{ border: '2px solid #E8E6E0', background: '#FAFAFA', color: '#19350C' }} onFocus={el => (el.target.style.borderColor = '#687D31')} onBlur={el => (el.target.style.borderColor = '#E8E6E0')} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold mb-1.5" style={{ color: '#406768' }}>Evidencia (fotos / documentos PDF — máx. 5)</label>
+                    <div className="rounded-xl border-2 border-dashed p-6 text-center" style={{ borderColor: '#D5D3CC', background: '#FAFAFA' }}>
+                      <div className="text-2xl mb-2">📎</div>
+                      <p className="text-xs font-semibold" style={{ color: '#19350C' }}>Arrastra archivos aquí</p>
+                      <p className="text-xs mt-1" style={{ color: '#406768' }}>JPG, PNG, PDF — max 10MB c/u</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-2 mt-5">
+                  <button onClick={() => setShowSelloModal(null)} className="flex-1 py-3 rounded-xl text-sm font-semibold" style={{ background: '#F5F3EE', color: '#406768' }}>Cancelar</button>
+                  <button onClick={() => setShowSelloModal(null)} className="flex-1 py-3 rounded-xl text-sm font-bold text-white" style={{ background: '#687D31' }}>Enviar solicitud</button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Tab: Catálogo */}
         {activeTab === 'catalogo' && (
@@ -219,7 +436,6 @@ export default function Gestion() {
                 ))}
               </div>
 
-              {/* Add product modal */}
               {showAddProduct && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }}>
                   <div className="rounded-3xl p-6 w-full max-w-md" style={{ background: 'white' }}>
@@ -252,129 +468,84 @@ export default function Gestion() {
           )
         )}
 
-        {/* Tab: Bandeja */}
-        {activeTab === 'bandeja' && (
-          PLAN !== 'Premium' ? (
-            <div className="rounded-2xl" style={{ background: 'white', boxShadow: '0 2px 12px rgba(25,53,12,0.06)' }}>
-              <UpgradeBanner
-                mensaje="Recibe solicitudes de compra directas"
-                descripcion="Gestiona pedidos y comunicaciones desde un solo lugar con el Plan Premium."
-              />
+        {/* Tab: Notificaciones */}
+        {activeTab === 'notificaciones' && (
+          <div className="rounded-2xl p-6" style={{ background: 'white', boxShadow: '0 2px 12px rgba(25,53,12,0.06)' }}>
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="font-bold" style={{ color: '#19350C', fontSize: '1.1rem' }}>Notificaciones</h2>
+              {noLeidasCount > 0 && (
+                <button
+                  onClick={marcarTodasLeidas}
+                  className="text-sm font-semibold transition-opacity hover:opacity-80"
+                  style={{ color: '#687D31' }}
+                >
+                  Marcar todas como leídas
+                </button>
+              )}
             </div>
-          ) : (
-            <div className="rounded-2xl overflow-hidden" style={{ background: 'white', boxShadow: '0 2px 12px rgba(25,53,12,0.06)' }}>
-              <div className="flex h-[600px]">
-                {/* Lista */}
-                <div className="w-72 flex-shrink-0 border-r overflow-y-auto" style={{ borderColor: '#E8E6E0' }}>
-                  <div className="p-4 border-b" style={{ borderColor: '#E8E6E0' }}>
-                    <h3 className="font-bold text-sm" style={{ color: '#19350C' }}>Mensajes</h3>
-                  </div>
-                  {MENSAJES.map(msg => (
-                    <button
-                      key={msg.id}
-                      onClick={() => setSelectedMsg(msg)}
-                      className="w-full flex items-start gap-3 p-4 border-b text-left transition-all duration-200 hover:opacity-90"
-                      style={{
-                        borderColor: '#E8E6E0',
-                        background: selectedMsg?.id === msg.id ? '#F0F5E8' : 'transparent',
-                      }}
-                    >
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-xl" style={{ background: msg.tipo === 'admin' ? '#19350C' : '#F5F3EE' }}>
-                        {msg.avatar}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-1">
-                          <p className="text-sm font-semibold truncate" style={{ color: '#19350C' }}>{msg.nombre}</p>
-                          {!msg.leido && <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#687D31' }} />}
-                        </div>
-                        {msg.tipo === 'admin' && (
-                          <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: '#19350C', color: 'white' }}>Admin</span>
-                        )}
-                        {msg.tipo === 'compra' && (
-                          <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: '#F0F5E8', color: '#687D31' }}>🛒 Pedido</span>
-                        )}
-                        <p className="text-xs mt-0.5 truncate" style={{ color: '#406768' }}>{msg.mensaje}</p>
-                        <p className="text-xs mt-0.5" style={{ color: '#D5D3CC' }}>{msg.tiempo}</p>
-                      </div>
-                    </button>
-                  ))}
-                </div>
 
-                {/* Detalle */}
-                {selectedMsg ? (
-                  <div className="flex-1 flex flex-col">
-                    <div className="p-4 border-b flex items-center gap-3" style={{ borderColor: '#E8E6E0' }}>
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center text-xl" style={{ background: '#F5F3EE' }}>
-                        {selectedMsg.avatar}
-                      </div>
-                      <div>
-                        <p className="font-bold text-sm" style={{ color: '#19350C' }}>{selectedMsg.nombre}</p>
-                        <p className="text-xs" style={{ color: '#406768' }}>{selectedMsg.tiempo}</p>
-                      </div>
-                    </div>
-                    <div className="flex-1 p-5 overflow-y-auto">
-                      {selectedMsg.tipo === 'compra' && (
-                        <div className="rounded-2xl p-4 mb-4" style={{ background: '#F5F3EE', border: '1px solid #E8E6E0' }}>
-                          <p className="text-xs font-bold mb-2" style={{ color: '#687D31' }}>🛒 SOLICITUD DE COMPRA</p>
-                          <p className="text-sm font-bold mb-1" style={{ color: '#19350C' }}>{selectedMsg.producto}</p>
-                          <div className="flex gap-4 text-xs" style={{ color: '#406768' }}>
-                            <span>Cantidad: <strong>{selectedMsg.cantidad}</strong></span>
-                            <span>Total: <strong style={{ color: '#FF6B35' }}>Bs. {selectedMsg.total}</strong></span>
-                          </div>
-                          <div className="flex gap-2 mt-3">
-                            <span
-                              className="px-2 py-1 rounded-full text-xs font-bold"
-                              style={{
-                                background: selectedMsg.estado === 'Pendiente' ? '#FFF3CD' : '#F0F5E8',
-                                color: selectedMsg.estado === 'Pendiente' ? '#D97706' : '#687D31',
-                              }}
-                            >
-                              {selectedMsg.estado}
-                            </span>
-                          </div>
-                          <div className="flex gap-2 mt-3">
-                            <button className="px-4 py-2 rounded-xl text-xs font-semibold text-white transition-opacity hover:opacity-90" style={{ background: '#687D31' }}>Confirmar</button>
-                            <button className="px-4 py-2 rounded-xl text-xs font-semibold text-white flex items-center gap-1 transition-opacity hover:opacity-90" style={{ background: '#25D366' }}>
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
-                              Responder por WA
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                      <div className={`flex ${selectedMsg.tipo === 'admin' ? 'justify-start' : 'justify-end'}`}>
-                        <div
-                          className="max-w-xs px-4 py-3 rounded-2xl text-sm"
-                          style={{
-                            background: selectedMsg.tipo === 'admin' ? '#F5F3EE' : '#E8F0D8',
-                            color: '#19350C',
-                          }}
-                        >
-                          {selectedMsg.mensaje}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="p-4 border-t flex gap-2" style={{ borderColor: '#E8E6E0' }}>
-                      <input
-                        type="text"
-                        placeholder="Escribe tu respuesta…"
-                        className="flex-1 px-4 py-2.5 rounded-xl text-sm outline-none"
-                        style={{ border: '2px solid #E8E6E0', background: '#FAFAFA', color: '#19350C' }}
-                        onFocus={el => (el.target.style.borderColor = '#687D31')}
-                        onBlur={el => (el.target.style.borderColor = '#E8E6E0')}
-                      />
-                      <button className="px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90" style={{ background: '#687D31' }}>
-                        Enviar
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex-1 flex items-center justify-center" style={{ color: '#D5D3CC' }}>
-                    <p className="text-sm">Selecciona un mensaje</p>
-                  </div>
-                )}
-              </div>
+            {/* Filtro tabs */}
+            <div className="flex gap-1 mb-5 overflow-x-auto pb-1">
+              {NOTIF_FILTROS.map(f => (
+                <button
+                  key={f.key}
+                  onClick={() => setNotifFiltro(f.key)}
+                  className="px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200"
+                  style={{
+                    background: notifFiltro === f.key ? '#19350C' : '#F5F3EE',
+                    color: notifFiltro === f.key ? 'white' : '#406768',
+                  }}
+                >
+                  {f.label}
+                  {f.key === 'no_leidas' && noLeidasCount > 0 && (
+                    <span className="ml-1 px-1.5 py-0.5 rounded-full text-xs" style={{ background: '#FF6B35', color: 'white', fontSize: '0.6rem' }}>
+                      {noLeidasCount}
+                    </span>
+                  )}
+                </button>
+              ))}
             </div>
-          )
+
+            {/* Lista */}
+            <div className="flex flex-col gap-1">
+              {notifsFiltradas.length === 0 ? (
+                <div className="text-center py-12 text-sm" style={{ color: '#D5D3CC' }}>No hay notificaciones en esta categoría</div>
+              ) : (
+                notifsFiltradas.map(notif => {
+                  const tipo = NOTIF_TIPOS[notif.tipo];
+                  return (
+                    <button
+                      key={notif.id}
+                      onClick={() => marcarLeida(notif.id)}
+                      className="flex items-center gap-3 p-4 rounded-xl text-left transition-all duration-200 hover:opacity-90 w-full"
+                      style={{ background: notif.leida ? 'transparent' : '#F5F3EE', border: '1px solid #E8E6E0' }}
+                    >
+                      {/* Indicador no leída */}
+                      <div className="flex-shrink-0 w-2">
+                        {!notif.leida && (
+                          <div className="w-2 h-2 rounded-full" style={{ background: '#687D31' }} />
+                        )}
+                      </div>
+                      {/* Ícono */}
+                      <div
+                        className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-lg"
+                        style={{ background: tipo.bg }}
+                      >
+                        {tipo.icono}
+                      </div>
+                      {/* Texto */}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold" style={{ color: '#19350C' }}>{notif.titulo}</p>
+                        <p className="text-xs mt-0.5 truncate" style={{ color: '#406768' }}>{notif.descripcion}</p>
+                      </div>
+                      {/* Timestamp */}
+                      <span className="text-xs flex-shrink-0" style={{ color: '#D5D3CC' }}>{notif.tiempo}</span>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </div>
         )}
 
         {/* Tab: Ventas */}
@@ -423,7 +594,7 @@ export default function Gestion() {
                   <h3 className="font-bold mb-4 text-sm" style={{ color: '#19350C' }}>Distribución por producto</h3>
                   <ResponsiveContainer width="100%" height={200}>
                     <PieChart>
-                      <Pie data={CATEGORIA_DATA} cx="50%" cy="50%" outerRadius={70} dataKey="value" label={({ name, value }) => `${value}%`} labelLine={false}>
+                      <Pie data={CATEGORIA_DATA} cx="50%" cy="50%" outerRadius={70} dataKey="value" label={({ value }) => `${value}%`} labelLine={false}>
                         {CATEGORIA_DATA.map((_, i) => <Cell key={i} fill={PIE_COLORS[i]} />)}
                       </Pie>
                       <Tooltip />

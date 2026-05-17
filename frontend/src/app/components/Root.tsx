@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router';
 import { Navbar } from './Navbar';
 import { Footer } from './Footer';
+import { Chatbot } from './Chatbot';
 
 export function Root() {
   return (
@@ -10,6 +11,7 @@ export function Root() {
         <Outlet />
       </main>
       <Footer />
+      <Chatbot />
     </div>
   );
 }

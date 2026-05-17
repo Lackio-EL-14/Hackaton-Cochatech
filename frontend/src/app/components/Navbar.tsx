@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router';
-import { Search, ShoppingCart, Menu, X, Rocket } from 'lucide-react';
+import { ShoppingCart, Menu, X, Rocket } from 'lucide-react';
+
+const isLoggedIn = () => sessionStorage.getItem('yo_impulso_logged') === '1';
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -18,6 +20,7 @@ export function Navbar() {
     { label: 'Inicio', to: '/' },
     { label: 'Emprendimientos', to: '/emprendimientos' },
     { label: 'Mapa Verde', to: '/mapa' },
+    { label: 'Comunidad', to: '/comunidad', protected: true },
   ];
 
   return (
@@ -49,7 +52,7 @@ export function Navbar() {
             {navLinks.map((link) => (
               <Link
                 key={link.to}
-                to={link.to}
+                to={link.protected && !isLoggedIn() ? '/login?from=comunidad' : link.to}
                 className="text-sm transition-colors duration-200 hover:opacity-80"
                 style={{
                   color: location.pathname === link.to ? '#687D31' : '#406768',
@@ -112,7 +115,7 @@ export function Navbar() {
           {navLinks.map((link) => (
             <Link
               key={link.to}
-              to={link.to}
+              to={link.protected && !isLoggedIn() ? '/login?from=comunidad' : link.to}
               className="py-2 text-sm font-medium"
               style={{ color: '#19350C' }}
               onClick={() => setMobileOpen(false)}

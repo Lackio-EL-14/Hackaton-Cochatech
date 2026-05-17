@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
-import { Search, X, MapPin, Navigation } from 'lucide-react';
+import { Search, X, MapPin, Navigation, ArrowLeft } from 'lucide-react';
 import { EMPRENDIMIENTOS, Emprendimiento } from '../data/emprendimientos';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 
@@ -59,6 +59,13 @@ export default function MapaVerde() {
       >
         {/* Header */}
         <div className="p-4 border-b" style={{ borderColor: '#E8E6E0' }}>
+          <Link
+            to="/"
+            className="inline-flex items-center gap-1 text-xs mb-3 transition-all hover:underline"
+            style={{ color: '#687D31' }}
+          >
+            <ArrowLeft size={12} /> Inicio
+          </Link>
           <h2 className="font-bold mb-3" style={{ color: '#19350C', fontSize: '1.1rem' }}>🗺️ Mapa Verde</h2>
           {/* Search */}
           <div

@@ -1,6 +1,6 @@
 import { Link } from 'react-router';
 import { MapPin, MessageCircle, Star } from 'lucide-react';
-import { Emprendimiento } from '../data/emprendimientos';
+import { Emprendimiento, SELLOS_DISPONIBLES } from '../data/emprendimientos';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 
 interface EmprendimientoCardProps {
@@ -75,6 +75,28 @@ export function EmprendimientoCard({ emprendimiento: e }: EmprendimientoCardProp
             </span>
           ))}
         </div>
+
+        {/* Sellos verificados */}
+        {e.sellos.obtenidos.length > 0 ? (
+          <div className="flex flex-wrap gap-1">
+            {e.sellos.obtenidos.slice(0, 3).map(s => {
+              const sello = SELLOS_DISPONIBLES.find(sd => sd.key === s.key);
+              if (!sello) return null;
+              return (
+                <span
+                  key={s.key}
+                  className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold"
+                  style={{ background: sello.bg, color: sello.color, border: `1px solid ${sello.color}40` }}
+                  title={sello.nombre}
+                >
+                  {sello.icono} {sello.nombreCorto}
+                </span>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="text-xs" style={{ color: '#D5D3CC' }}>Sin sellos verificados aún</p>
+        )}
 
         {/* Perfil Verde */}
         <div className="mt-auto pt-2">

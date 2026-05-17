@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
-import { useSearchParams } from 'react-router';
-import { Search, SlidersHorizontal } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router';
+import { Search, SlidersHorizontal, ArrowLeft } from 'lucide-react';
 import { EMPRENDIMIENTOS, CATEGORIAS } from '../data/emprendimientos';
 import { EmprendimientoCard } from '../components/EmprendimientoCard';
 
@@ -30,6 +30,18 @@ export default function Emprendimientos() {
     <div style={{ background: '#F5F3EE', minHeight: '100vh' }}>
       {/* Header */}
       <div style={{ background: 'linear-gradient(135deg, #19350C, #2D5A1A)', padding: '3rem 1.5rem 5rem' }}>
+        <div className="max-w-7xl mx-auto">
+          {/* Back button */}
+          <div className="mb-4">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-1 text-sm transition-all hover:underline"
+              style={{ color: 'rgba(245,243,238,0.75)' }}
+            >
+              <ArrowLeft size={14} /> Inicio
+            </Link>
+          </div>
+        </div>
         <div className="max-w-7xl mx-auto text-center">
           <h1 className="text-white mb-3" style={{ fontWeight: 800, fontSize: 'clamp(1.5rem,4vw,2.5rem)' }}>
             Emprendimientos verdes de Bolivia

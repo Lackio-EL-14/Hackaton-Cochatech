@@ -7,6 +7,7 @@ import MapaVerde from './pages/MapaVerde';
 import LoginEmprendedor from './pages/LoginEmprendedor';
 import Registro from './pages/Registro';
 import Gestion from './pages/Gestion';
+import Comunidad from './pages/Comunidad';
 import LoginAdmin from './pages/LoginAdmin';
 import PanelAdmin from './pages/PanelAdmin';
 
@@ -22,6 +23,7 @@ export const router = createBrowserRouter([
       { path: 'login', Component: LoginEmprendedor },
       { path: 'registro', Component: Registro },
       { path: 'gestion', Component: Gestion },
+      { path: 'comunidad', Component: Comunidad },
     ],
   },
   {
