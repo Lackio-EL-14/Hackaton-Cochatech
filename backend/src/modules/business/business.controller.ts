@@ -1,4 +1,4 @@
-import { Controller, Post, Put, Get, Body, UseGuards, Req, ForbiddenException } from '@nestjs/common';
+import { Controller, Post, Put, Get, Body, UseGuards, Req, ForbiddenException, Param } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { BusinessService } from './business.service';
 import { CreateBusinessDto } from './dto/create-business.dto';
@@ -29,4 +29,15 @@ export class BusinessController {
     }
     return this.businessService.update(updateBusinessDto, req.user.id);
   }
+
+  @Get('categories')
+  async getCategories() {
+    return this.businessService.findAllCategories();
+  }
+
+  @Get(':id/products')
+  async getBusinessProducts(@Param('id') businessId: string) {
+    return this.businessService.findProductsByBusiness(businessId);
+  }
+
 }
