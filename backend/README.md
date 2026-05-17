@@ -56,43 +56,133 @@ $ npm run test:e2e
 # test coverage
 $ npm run test:cov
 ```
+# 🚀 Documentación de la API - Hackathon Cochatech (MVP - Bloque 1)
 
-## Deployment
+Esta sección documenta los endpoints desarrollados para la Fase 1 (MVP) del backend. La API está construida con **NestJS** y utiliza **MariaDB** (desplegado en Aiven) para la persistencia de datos.
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+La seguridad perimetral se maneja mediante **Tokens JWT**. Para los endpoints privados, se debe enviar el token en la cabecera HTTP:
+`Authorization: Bearer <TU_TOKEN_JWT>`
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+---
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+## 🔐 1. Módulo de Autenticación (`/auth`)
+
+Maneja el registro y la emisión de tokens JWT con claims de roles (`ADMIN`, `ENTREPRENEUR`).
+
+### Registrar un Usuario
+* **Método:** `POST`
+* **Ruta:** `/auth/register`
+* **Acceso:** Público
+* **Payload (Body JSON):**
+  ```json
+  {
+    "email": "emprendedor@cochatech.com",
+    "password": "password123",
+    "role": "ENTREPRENEUR" // Puede ser "ADMIN" o "ENTREPRENEUR"
+  }
+
+
+Respuesta de Éxito (201 Created): Retorna el objeto del usuario creado (sin la contraseña).
+
+### Iniciar Sesión (Login)
+
+* **Método:** `POST`
+* **Ruta:** `/auth/login`
+* **Acceso:** `Público`
+* **Payload (Body JSON):**
+
+```json
+{
+  "email": "emprendedor@cochatech.com",
+  "password": "password123"
+}
+```
+Respuesta de Éxito (200 OK): 
+```json
+{
+"access_token": "eyJhbGciOiJIUz...",
+"user": {
+"id": "uuid-del-usuario",
+"email": "emprendedor@cochatech.com",
+"role": "ENTREPRENEUR",
+"isPremium": false
+}
+}
+```
+## 🏪 2. Módulo de Negocios (/business)
+
+Gestión del perfil comercial de los emprendedores y visualización pública del catálogo de negocios activos.
+
+### Obtener Catálogo Público (Lectura)
+
+* **Método:** `GET`
+* **Ruta:** `/business`
+* **Acceso: Público (No requiere Token)**
+
+* **Descripción: Retorna todos los negocios con estado "APPROVED". Inyecta el atributo booleano calculado isOpen basado en el objeto operatingHours y la hora actual del servidor.**
+
+Respuesta de Éxito (200 OK): Arreglo de negocios aprobados con el flag "isOpen": true/false.
+
+### Registrar un Negocio (Escritura)
+* **Método:** `POST`
+* **Ruta:** `/business`
+* **Acceso: Privado (Requiere Token JWT)**
+* **Rol Requerido: ENTREPRENEUR**
+
+**Payload (Body JSON):**
+
+```json
+{
+  "name": "Eco-Market Cochabamba",
+  "description": "Tienda de productos orgánicos y empaques compostables.",
+  "latitude": -17.3935,
+  "longitude": -66.1570,
+  "salesType": "AMBOS",
+  "contactPhone": "+59171234567",
+  "operatingHours": {
+    "lun": {"open": "08:00", "close": "18:00", "closed": false},
+    "mar": {"open": "08:00", "close": "18:00", "closed": false}
+  }
+}
+```
+Respuesta de Éxito (201 Created): Retorna el objeto del negocio creado. El sistema fuerza internamente el estado a "PENDING".
+
+### Editar un Negocio (Actualización)
+* **Método:** `PUT`
+* **Ruta:** `/business`
+* **Acceso: Privado (Requiere Token JWT)**
+* **Rol Requerido: ENTREPRENEUR**
+
+* **Descripción: Modifica el perfil comercial del emprendedor logueado. Al detectar cambios, el sistema reinicia el status a "PENDING" de forma automática y limpia cualquier razón de rechazo (rejectionReason).**
+
+* **Payload: Mismo formato que el POST.**
+
+## 🛡️ 3. Módulo de Administración (/admin)
+**Herramientas de moderación para que los administradores controlen qué negocios son visibles en la plataforma.**
+
+* **Aprobar / Rechazar Negocio**
+* **Método:** `PATCH`
+* **Ruta:** `/admin/business/:id/status (Reemplazar :id por el ID del negocio)`
+* **Acceso: Privado (Requiere Token JWT)**
+
+* **Rol Requerido: ADMIN**
+
+**Payload para Aprobar (Body JSON):**
+```json
+{
+  "status": "APPROVED"
+}
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+**Payload para Rechazar (Body JSON):**
 
-## Resources
+```json
+{
+  "status": "REJECTED",
+  "rejectionReason": "La descripción del impacto ambiental es insuficiente."
+}
+```
 
-Check out a few resources that may come in handy when working with NestJS:
+**Reglas de validación: Si el estado es "REJECTED", el campo rejectionReason es estrictamente obligatorio.**
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+Respuesta de Éxito (200 OK): Retorna el negocio actualizado con su nuevo estado.

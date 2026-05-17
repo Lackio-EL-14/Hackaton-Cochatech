@@ -5,9 +5,10 @@ import { BusinessController } from './business.controller';
 import { BusinessService } from './business.service';
 import { Business } from './entitites/business.entity';
 import { Category } from './entitites/category.entity';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Business, Category])],
+  imports: [TypeOrmModule.forFeature([Business, Category]), AuthModule],
   controllers: [BusinessController],
   providers: [BusinessService],
   exports: [TypeOrmModule],

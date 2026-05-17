@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { Check, Upload, Eye, EyeOff, Rocket } from 'lucide-react';
+import { Check, Upload, Eye, EyeOff, Rocket, ArrowLeft, X } from 'lucide-react';
 
-const STEPS = ['Info básica', 'Ubicación', 'Perfil sostenible', 'Acceso'];
+const STEPS = ['Info básica', 'Ubicación', 'Perfil sostenible', 'Acceso', 'Elige tu plan'];
 
 const ACTIVIDADES = [
   { key: 'reciclados', label: 'Uso de materiales reciclados', icon: '♻️' },
@@ -45,6 +45,7 @@ export default function Registro() {
   const [diasActivos, setDiasActivos] = useState<string[]>(['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes']);
   const [dragOver, setDragOver] = useState(false);
   const [previewImg, setPreviewImg] = useState<string | null>(null);
+  const [showQrModal, setShowQrModal] = useState(false);
 
   const pwStrength = password.length === 0 ? 0 : password.length < 6 ? 1 : password.length < 10 ? 2 : 3;
   const pwColors = ['#E8E6E0', '#FF6B35', '#FF6B35', '#687D31'];
@@ -64,12 +65,23 @@ export default function Registro() {
     </div>
   );
 
-  const handleNext = () => { if (step < 3) setStep(step + 1); else navigate('/gestion'); };
+  const handleNext = () => { if (step < 4) setStep(step + 1); else navigate('/gestion'); };
   const handleBack = () => { if (step > 0) setStep(step - 1); };
 
   return (
     <div className="min-h-screen py-12 px-4" style={{ background: '#F5F3EE' }}>
       <div className="max-w-2xl mx-auto">
+        {/* Back button — Ajuste 7 */}
+        <div className="mb-4">
+          <Link
+            to="/login"
+            className="inline-flex items-center gap-1 text-sm transition-all hover:underline"
+            style={{ color: '#687D31' }}
+          >
+            <ArrowLeft size={14} /> Iniciar sesión
+          </Link>
+        </div>
+
         {/* Logo */}
         <div className="flex items-center justify-center gap-2 mb-8">
           <div className="flex items-center justify-center w-9 h-9 rounded-xl" style={{ background: 'linear-gradient(135deg,#19350C,#687D31)' }}>
@@ -257,7 +269,6 @@ export default function Registro() {
             <div className="flex flex-col gap-5">
               <h2 style={{ color: '#19350C', fontWeight: 800, fontSize: '1.4rem' }}>📍 Ubicación</h2>
               <p className="text-sm" style={{ color: '#406768' }}>Arrastra el pin para marcar la ubicación exacta de tu emprendimiento.</p>
-              {/* Mock map */}
               <div
                 className="rounded-2xl overflow-hidden relative"
                 style={{ height: '320px', background: 'linear-gradient(160deg,#B8D4C0,#9DBFB0)' }}
@@ -270,7 +281,6 @@ export default function Registro() {
                   ))}
                   <text x="270" y="168" fill="#19350C" fontSize="16" fontWeight="bold" opacity="0.7">Cochabamba</text>
                 </svg>
-                {/* Draggable pin (static mock) */}
                 <div className="absolute" style={{ left: '50%', top: '45%', transform: 'translate(-50%,-100%)' }}>
                   <div className="flex flex-col items-center cursor-grab active:cursor-grabbing">
                     <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-xl" style={{ background: '#FF6B35', boxShadow: '0 4px 16px rgba(255,107,53,0.5)' }}>
@@ -418,7 +428,6 @@ export default function Registro() {
                     {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
-                {/* Strength indicator */}
                 {password.length > 0 && (
                   <div className="mt-2 flex items-center gap-2">
                     <div className="flex gap-1 flex-1">
@@ -463,25 +472,139 @@ export default function Registro() {
             </div>
           )}
 
+          {/* Step 4: Elige tu plan */}
+          {step === 4 && (
+            <div className="flex flex-col gap-6">
+              <div className="text-center">
+                <h2 style={{ color: '#19350C', fontWeight: 800, fontSize: '1.4rem' }}>Elige cómo quieres empezar</h2>
+                <p className="text-sm mt-2" style={{ color: '#406768' }}>Puedes cambiar de plan en cualquier momento desde tu panel de gestión.</p>
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-4">
+                {/* Plan Gratis */}
+                <div
+                  className="rounded-2xl p-6 flex flex-col gap-4"
+                  style={{ boxShadow: '0 4px 24px rgba(25,53,12,0.10)', border: '2px solid #C8D9A0', borderRadius: '16px' }}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl">🌱</span>
+                    <span
+                      className="px-3 py-1 rounded-full text-xs font-bold"
+                      style={{ border: '1.5px solid #687D31', color: '#687D31', background: 'transparent' }}
+                    >
+                      Gratis
+                    </span>
+                  </div>
+                  <div>
+                    <p className="font-black text-lg" style={{ color: '#19350C' }}>Plan Gratis</p>
+                    <p className="text-xs mt-1" style={{ color: '#406768' }}>Para comenzar sin costo</p>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    {[
+                      'Perfil público en la plataforma',
+                      'Aparición en el Mapa Verde',
+                      'Hasta 3 sellos solicitables',
+                      'Acceso a la comunidad de emprendedores',
+                    ].map(b => (
+                      <div key={b} className="flex items-center gap-2 text-xs" style={{ color: '#19350C' }}>
+                        <span style={{ color: '#687D31', fontWeight: 700 }}>✓</span> {b}
+                      </div>
+                    ))}
+                    {[
+                      'Catálogo de productos',
+                      'Módulo de ventas e inventario',
+                      'Asesorías',
+                    ].map(b => (
+                      <div key={b} className="flex items-center gap-2 text-xs" style={{ color: '#D5D3CC', textDecoration: 'line-through' }}>
+                        <span style={{ color: '#D5D3CC' }}>✕</span> {b}
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => navigate('/gestion')}
+                    className="w-full py-3 rounded-xl text-sm font-bold transition-all duration-200 hover:opacity-90 mt-auto"
+                    style={{ border: '2px solid #687D31', color: '#687D31', background: 'transparent' }}
+                  >
+                    Comenzar gratis
+                  </button>
+                </div>
+
+                {/* Plan Premium */}
+                <div
+                  className="rounded-2xl p-6 flex flex-col gap-4"
+                  style={{ boxShadow: '0 4px 24px rgba(255,107,53,0.18)', border: '2px solid #FF6B35', borderRadius: '16px', background: '#FFFBF8' }}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl">🚀</span>
+                    <span
+                      className="px-3 py-1 rounded-full text-xs font-bold text-white"
+                      style={{ background: '#FF6B35' }}
+                    >
+                      Premium
+                    </span>
+                  </div>
+                  <div>
+                    <p className="font-black text-lg" style={{ color: '#19350C' }}>Plan Premium</p>
+                    <p className="text-xs mt-1" style={{ color: '#FF6B35', fontWeight: 700 }}>[Precio] Bs./mes</p>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    {[
+                      'Todo lo del plan Gratis',
+                      'Catálogo de productos y servicios',
+                      'Módulo de ventas e inventario',
+                      'Centro de notificaciones completo',
+                      'Asesorías personalizadas',
+                      'Badge Premium visible en perfil',
+                    ].map(b => (
+                      <div key={b} className="flex items-center gap-2 text-xs" style={{ color: '#19350C' }}>
+                        <span style={{ color: '#FF6B35', fontWeight: 700 }}>✓</span> {b}
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => setShowQrModal(true)}
+                    className="w-full py-3 rounded-xl text-sm font-bold text-white transition-all duration-200 hover:opacity-90 mt-auto"
+                    style={{ background: '#FF6B35' }}
+                  >
+                    Activar Premium
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Navigation */}
-          <div className="flex gap-3 mt-8">
-            {step > 0 && (
+          {step < 4 && (
+            <div className="flex gap-3 mt-8">
+              {step > 0 && (
+                <button
+                  onClick={handleBack}
+                  className="flex-1 py-3.5 rounded-xl text-sm font-semibold transition-all duration-200 hover:opacity-80"
+                  style={{ background: '#F5F3EE', color: '#406768', border: '2px solid #E8E6E0' }}
+                >
+                  ← Anterior
+                </button>
+              )}
+              <button
+                onClick={handleNext}
+                className="flex-1 py-3.5 rounded-xl text-sm font-bold text-white transition-all duration-200 hover:opacity-90"
+                style={{ background: step === 3 ? '#19350C' : '#687D31' }}
+              >
+                {step === 3 ? '🚀 Registrar mi emprendimiento' : 'Siguiente →'}
+              </button>
+            </div>
+          )}
+          {step === 4 && (
+            <div className="mt-6 text-center">
               <button
                 onClick={handleBack}
-                className="flex-1 py-3.5 rounded-xl text-sm font-semibold transition-all duration-200 hover:opacity-80"
-                style={{ background: '#F5F3EE', color: '#406768', border: '2px solid #E8E6E0' }}
+                className="text-sm transition-opacity hover:opacity-80"
+                style={{ color: '#406768' }}
               >
-                ← Anterior
+                ← Volver al paso anterior
               </button>
-            )}
-            <button
-              onClick={handleNext}
-              className="flex-1 py-3.5 rounded-xl text-sm font-bold text-white transition-all duration-200 hover:opacity-90"
-              style={{ background: step === 3 ? '#19350C' : '#687D31' }}
-            >
-              {step === 3 ? '🚀 Registrar mi emprendimiento' : 'Siguiente →'}
-            </button>
-          </div>
+            </div>
+          )}
         </div>
 
         <p className="text-center mt-5 text-xs" style={{ color: '#406768' }}>
@@ -491,6 +614,52 @@ export default function Registro() {
           </Link>
         </p>
       </div>
+
+      {/* QR Payment Modal */}
+      {showQrModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.55)' }}>
+          <div className="rounded-3xl p-8 w-full max-w-sm flex flex-col items-center" style={{ background: 'white', boxShadow: '0 8px 48px rgba(0,0,0,0.2)' }}>
+            <div className="flex items-center justify-between w-full mb-5">
+              <h3 className="font-black" style={{ color: '#19350C', fontSize: '1.15rem' }}>Completa tu pago</h3>
+              <button onClick={() => setShowQrModal(false)} style={{ color: '#406768' }}><X size={20} /></button>
+            </div>
+            <p className="text-sm text-center mb-5" style={{ color: '#406768' }}>
+              Escanea el QR o transfiere al número indicado. Una vez realizado el pago, confírmalo aquí.
+            </p>
+            {/* QR placeholder */}
+            <div
+              className="rounded-2xl flex items-center justify-center mb-4"
+              style={{ width: 160, height: 160, border: '3px solid #FF6B35', background: '#FFF8F5' }}
+            >
+              <div className="grid grid-cols-5 gap-1 p-2">
+                {[...Array(25)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="w-5 h-5 rounded-sm"
+                    style={{ background: [0,1,5,6,7,10,11,12,14,18,19,20,24].includes(i) ? '#19350C' : 'transparent' }}
+                  />
+                ))}
+              </div>
+            </div>
+            <div
+              className="w-full rounded-xl p-3 mb-5 text-center text-xs"
+              style={{ background: '#F5F3EE', color: '#406768', border: '1px solid #E8E6E0' }}
+            >
+              <p className="font-bold mb-1" style={{ color: '#19350C' }}>Datos de transferencia</p>
+              <p>Banco: [Nombre del banco]</p>
+              <p>Cuenta: [XXXX-XXXX-XXXX]</p>
+              <p>Titular: Fundación Gaia Pacha</p>
+            </div>
+            <button
+              onClick={() => { setShowQrModal(false); navigate('/gestion'); }}
+              className="w-full py-3.5 rounded-xl text-sm font-bold text-white transition-all duration-200 hover:opacity-90 flex items-center justify-center gap-2"
+              style={{ background: '#FF6B35' }}
+            >
+              <Check size={16} /> Ya pagué — Activar mi cuenta Premium
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

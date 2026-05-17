@@ -1,3 +1,28 @@
+export interface Sello {
+  key: string;
+  nombre: string;
+  nombreCorto: string;
+  icono: string;
+  color: string;
+  bg: string;
+  descripcion: string;
+}
+
+export const SELLOS_DISPONIBLES: Sello[] = [
+  { key: 'produccion_limpia', nombre: 'Producción Limpia', nombreCorto: 'Prod. Limpia', icono: '🌿', color: '#687D31', bg: '#F0F5E8', descripcion: 'Procesos productivos sin químicos tóxicos verificados.' },
+  { key: 'economia_circular', nombre: 'Economía Circular', nombreCorto: 'Eco Circular', icono: '♻️', color: '#406768', bg: '#EEF5F8', descripcion: 'Uso de materiales reciclados o reutilizados en la producción.' },
+  { key: 'comercio_justo', nombre: 'Comercio Justo', nombreCorto: 'Comercio Justo', icono: '🤝', color: '#FF6B35', bg: '#FFF0E8', descripcion: 'Condiciones laborales éticas verificadas por el equipo Yo Impulso.' },
+  { key: 'eficiencia_hidrica', nombre: 'Uso Eficiente del Agua', nombreCorto: 'Agua Eficiente', icono: '💧', color: '#6FA9BB', bg: '#E8F3F8', descripcion: 'Prácticas documentadas de ahorro hídrico en la producción.' },
+  { key: 'huella_reducida', nombre: 'Huella Reducida', nombreCorto: 'Huella Reducida', icono: '🌍', color: '#19350C', bg: '#E8EDD8', descripcion: 'Reducción verificada de emisiones de CO₂ respecto a la media del sector.' },
+  { key: 'packaging_sostenible', nombre: 'Packaging Sostenible', nombreCorto: 'Packaging', icono: '📦', color: '#687D31', bg: '#F5F3EE', descripcion: 'Empaques biodegradables o reutilizables certificados.' },
+  { key: 'hecho_en_bolivia', nombre: 'Hecho en Bolivia', nombreCorto: 'Hecho en Bolivia', icono: '🏡', color: '#19350C', bg: '#FFF0E8', descripcion: 'Producción 100% local boliviana verificada.' },
+];
+
+export interface SellosEmprendimiento {
+  obtenidos: Array<{ key: string; fechaOtorgamiento: string }>;
+  enRevision: Array<{ key: string; fechaEnvio: string }>;
+}
+
 export interface Producto {
   id: string;
   nombre: string;
@@ -37,6 +62,7 @@ export interface Emprendimiento {
   fechaSolicitud: string;
   productos: Producto[];
   impacto: ImpactoMetrica[];
+  sellos: SellosEmprendimiento;
 }
 
 export const CATEGORIAS = [
@@ -72,6 +98,14 @@ export const EMPRENDIMIENTOS: Emprendimiento[] = [
     plan: 'Premium',
     estado: 'Activo',
     fechaSolicitud: '2024-11-10',
+    sellos: {
+      obtenidos: [
+        { key: 'produccion_limpia', fechaOtorgamiento: '2024-12-01' },
+        { key: 'hecho_en_bolivia', fechaOtorgamiento: '2024-12-01' },
+        { key: 'comercio_justo', fechaOtorgamiento: '2025-01-15' },
+      ],
+      enRevision: [{ key: 'eficiencia_hidrica', fechaEnvio: '2025-05-10' }],
+    },
     impacto: [
       { icono: '💧', valor: '35%', descripcion: 'Ahorro de agua vs. producción industrial' },
       { icono: '♻️', valor: '1.2 kg', descripcion: 'Plástico evitado por mes' },
@@ -104,6 +138,13 @@ export const EMPRENDIMIENTOS: Emprendimiento[] = [
     plan: 'Premium',
     estado: 'Activo',
     fechaSolicitud: '2024-10-22',
+    sellos: {
+      obtenidos: [
+        { key: 'produccion_limpia', fechaOtorgamiento: '2024-11-20' },
+        { key: 'packaging_sostenible', fechaOtorgamiento: '2025-01-08' },
+      ],
+      enRevision: [{ key: 'huella_reducida', fechaEnvio: '2025-05-01' }],
+    },
     impacto: [
       { icono: '💧', valor: '40%', descripcion: 'Ahorro de agua en formulación' },
       { icono: '♻️', valor: '2.5 kg', descripcion: 'Plástico evitado por mes' },
@@ -134,6 +175,10 @@ export const EMPRENDIMIENTOS: Emprendimiento[] = [
     plan: 'Gratis',
     estado: 'Activo',
     fechaSolicitud: '2024-12-01',
+    sellos: {
+      obtenidos: [{ key: 'hecho_en_bolivia', fechaOtorgamiento: '2025-01-20' }],
+      enRevision: [],
+    },
     impacto: [
       { icono: '🌿', valor: '15+', descripcion: 'Plantas medicinales bolivianas usadas' },
       { icono: '♻️', valor: '1.8 kg', descripcion: 'Plástico evitado mensualmente' },
@@ -160,6 +205,13 @@ export const EMPRENDIMIENTOS: Emprendimiento[] = [
     plan: 'Premium',
     estado: 'Activo',
     fechaSolicitud: '2024-09-15',
+    sellos: {
+      obtenidos: [
+        { key: 'hecho_en_bolivia', fechaOtorgamiento: '2024-10-05' },
+        { key: 'comercio_justo', fechaOtorgamiento: '2024-10-05' },
+      ],
+      enRevision: [],
+    },
     impacto: [
       { icono: '🌱', valor: '100%', descripcion: 'Arcilla de fuentes locales sostenibles' },
       { icono: '🤝', valor: '6', descripcion: 'Artesanos de la comunidad empleados' },
@@ -186,6 +238,7 @@ export const EMPRENDIMIENTOS: Emprendimiento[] = [
     plan: 'Gratis',
     estado: 'Activo',
     fechaSolicitud: '2025-01-08',
+    sellos: { obtenidos: [], enRevision: [{ key: 'hecho_en_bolivia', fechaEnvio: '2025-04-20' }] },
     impacto: [
       { icono: '🌱', valor: '8+', descripcion: 'Frutas nativas bolivianas en el menú' },
       { icono: '🤝', valor: '12', descripcion: 'Familias campesinas proveedoras' },
@@ -211,6 +264,14 @@ export const EMPRENDIMIENTOS: Emprendimiento[] = [
     plan: 'Premium',
     estado: 'Activo',
     fechaSolicitud: '2024-08-20',
+    sellos: {
+      obtenidos: [
+        { key: 'produccion_limpia', fechaOtorgamiento: '2024-09-10' },
+        { key: 'packaging_sostenible', fechaOtorgamiento: '2024-09-10' },
+        { key: 'eficiencia_hidrica', fechaOtorgamiento: '2025-02-01' },
+      ],
+      enRevision: [],
+    },
     impacto: [
       { icono: '♻️', valor: '3 kg', descripcion: 'Plástico evitado con shampoos sólidos' },
       { icono: '💧', valor: '45%', descripcion: 'Menos agua en la producción' },
@@ -237,6 +298,7 @@ export const EMPRENDIMIENTOS: Emprendimiento[] = [
     plan: 'Gratis',
     estado: 'Pendiente',
     fechaSolicitud: '2025-02-14',
+    sellos: { obtenidos: [], enRevision: [{ key: 'economia_circular', fechaEnvio: '2025-03-12' }] },
     impacto: [
       { icono: '🌱', valor: '0%', descripcion: 'Plomo en esmaltes (libre de metales pesados)' },
       { icono: '♻️', valor: '2 kg', descripcion: 'Arcilla reciclada reutilizada mensualmente' },
@@ -263,6 +325,7 @@ export const EMPRENDIMIENTOS: Emprendimiento[] = [
     plan: 'Gratis',
     estado: 'Activo',
     fechaSolicitud: '2024-12-20',
+    sellos: { obtenidos: [{ key: 'economia_circular', fechaOtorgamiento: '2025-01-30' }], enRevision: [] },
     impacto: [
       { icono: '🌱', valor: '200+', descripcion: 'Niños formados en sostenibilidad' },
       { icono: '♻️', valor: '15 kg', descripcion: 'Plástico reciclado en talleres' },
@@ -289,6 +352,14 @@ export const EMPRENDIMIENTOS: Emprendimiento[] = [
     plan: 'Premium',
     estado: 'Activo',
     fechaSolicitud: '2024-07-30',
+    sellos: {
+      obtenidos: [
+        { key: 'produccion_limpia', fechaOtorgamiento: '2024-08-20' },
+        { key: 'eficiencia_hidrica', fechaOtorgamiento: '2024-08-20' },
+        { key: 'hecho_en_bolivia', fechaOtorgamiento: '2025-03-01' },
+      ],
+      enRevision: [],
+    },
     impacto: [
       { icono: '🐾', valor: '100%', descripcion: 'Vegano y sin pruebas en animales' },
       { icono: '💧', valor: '60%', descripcion: 'Aloe cultivado con agua de lluvia' },
@@ -315,6 +386,7 @@ export const EMPRENDIMIENTOS: Emprendimiento[] = [
     plan: 'Gratis',
     estado: 'Bloqueado',
     fechaSolicitud: '2024-11-05',
+    sellos: { obtenidos: [], enRevision: [] },
     impacto: [
       { icono: '♻️', valor: '5 kg', descripcion: 'Materiales reciclados usados mensualmente' },
       { icono: '🌿', valor: '100%', descripcion: 'Pigmentos de origen natural' },

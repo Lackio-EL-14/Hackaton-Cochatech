@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router';
-import { ChevronLeft, Clock, MapPin, MessageCircle, ShoppingCart, Plus, Minus, Facebook, Instagram, Star } from 'lucide-react';
-import { EMPRENDIMIENTOS } from '../data/emprendimientos';
+import { ChevronLeft, Clock, MapPin, ShoppingCart, Plus, Minus, Facebook, Instagram, Star } from 'lucide-react';
+import { EMPRENDIMIENTOS, SELLOS_DISPONIBLES } from '../data/emprendimientos';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 
 export default function PerfilEmprendimiento() {
@@ -40,13 +40,15 @@ export default function PerfilEmprendimiento() {
   return (
     <div style={{ background: '#F5F3EE', minHeight: '100vh' }}>
       <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Breadcrumb */}
-        <div className="flex items-center gap-2 mb-6 text-sm" style={{ color: '#406768' }}>
-          <Link to="/emprendimientos" className="flex items-center gap-1 hover:opacity-80 transition-opacity">
-            <ChevronLeft size={16} /> Emprendimientos
+        {/* Back button */}
+        <div className="mb-6">
+          <Link
+            to="/emprendimientos"
+            className="inline-flex items-center gap-1 text-sm transition-all hover:underline"
+            style={{ color: '#687D31' }}
+          >
+            <ChevronLeft size={14} /> Emprendimientos
           </Link>
-          <span>/</span>
-          <span style={{ color: '#19350C', fontWeight: 600 }}>{e.nombre}</span>
         </div>
 
         <div className="grid lg:grid-cols-5 gap-8">
@@ -176,6 +178,45 @@ export default function PerfilEmprendimiento() {
                   style={{ width: `${e.perfilVerde}%`, background: 'linear-gradient(90deg, #687D31, #19350C)' }}
                 />
               </div>
+            </div>
+
+            {/* Sellos verificados */}
+            <div>
+              <h3 className="font-bold mb-3" style={{ color: '#19350C', fontSize: '1rem' }}>Sellos de sostenibilidad verificados</h3>
+              {e.sellos.obtenidos.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {e.sellos.obtenidos.map(s => {
+                    const sello = SELLOS_DISPONIBLES.find(sd => sd.key === s.key);
+                    if (!sello) return null;
+                    return (
+                      <div key={s.key} className="relative group">
+                        <div
+                          className="flex items-center gap-2 px-3 py-2 rounded-xl cursor-default"
+                          style={{ background: sello.bg, border: `1.5px solid ${sello.color}50` }}
+                        >
+                          <span className="text-lg">{sello.icono}</span>
+                          <div>
+                            <p className="text-xs font-bold" style={{ color: sello.color }}>{sello.nombre}</p>
+                            <p className="text-xs" style={{ color: '#406768' }}>Verificado {s.fechaOtorgamiento}</p>
+                          </div>
+                        </div>
+                        {/* Tooltip */}
+                        <div
+                          className="absolute bottom-full left-0 mb-2 w-56 p-3 rounded-xl text-xs leading-relaxed pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10"
+                          style={{ background: '#19350C', color: 'white', boxShadow: '0 8px 24px rgba(0,0,0,0.2)' }}
+                        >
+                          <p className="font-bold mb-1">{sello.nombre}</p>
+                          <p style={{ color: 'rgba(213,211,204,0.85)' }}>{sello.descripcion}</p>
+                          <p className="mt-1.5 font-semibold" style={{ color: '#6FA9BB' }}>Otorgado: {s.fechaOtorgamiento}</p>
+                          <div className="absolute top-full left-4 w-2 h-2 rotate-45 -mt-1" style={{ background: '#19350C' }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-sm" style={{ color: '#D5D3CC' }}>Este emprendimiento aún no tiene sellos de sostenibilidad verificados.</p>
+              )}
             </div>
 
             {/* Impacto */}

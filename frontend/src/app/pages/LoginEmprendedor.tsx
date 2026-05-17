@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router';
-import { Eye, EyeOff, Rocket } from 'lucide-react';
-import { TurtleMascot } from '../components/TurtleMascot';
+import { Link, useNavigate, useSearchParams } from 'react-router';
+import { Eye, EyeOff, Rocket, ArrowLeft } from 'lucide-react';
 
 export default function LoginEmprendedor() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const fromComunidad = searchParams.get('from') === 'comunidad';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
@@ -15,7 +16,8 @@ export default function LoginEmprendedor() {
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
-      navigate('/gestion');
+      sessionStorage.setItem('yo_impulso_logged', '1');
+      navigate(fromComunidad ? '/comunidad' : '/gestion');
     }, 1200);
   };
 
@@ -25,6 +27,17 @@ export default function LoginEmprendedor() {
       style={{ background: '#F5F3EE' }}
     >
       <div className="w-full max-w-md">
+        {/* Back button */}
+        <div className="mb-4">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-1 text-sm transition-all hover:underline"
+            style={{ color: '#687D31' }}
+          >
+            <ArrowLeft size={14} /> Inicio
+          </Link>
+        </div>
+
         {/* Logo */}
         <div className="flex items-center justify-center gap-2 mb-8">
           <div
@@ -41,20 +54,21 @@ export default function LoginEmprendedor() {
 
         {/* Card */}
         <div
-          className="rounded-3xl p-8 relative overflow-hidden"
+          className="rounded-3xl p-8"
           style={{ background: 'white', boxShadow: '0 8px 48px rgba(25,53,12,0.12)' }}
         >
-          {/* Turtle mascot - top right corner */}
-          <div className="absolute -top-4 -right-4 opacity-90">
-            <TurtleMascot size={110} variant="wave" />
-          </div>
-
           <h2 className="mb-1" style={{ color: '#19350C', fontWeight: 800, fontSize: '1.5rem' }}>
             Bienvenido, emprendedor
           </h2>
-          <p className="text-sm mb-7" style={{ color: '#406768' }}>
-            Accede a tu panel de gestión y sigue creciendo 🌱
-          </p>
+          {fromComunidad ? (
+            <div className="mb-5 px-4 py-3 rounded-xl text-sm" style={{ background: '#F0F5E8', border: '1px solid #C8D9A0', color: '#19350C' }}>
+              🌿 Inicia sesión para acceder a la <strong>Comunidad de emprendedores</strong>
+            </div>
+          ) : (
+            <p className="text-sm mb-7" style={{ color: '#406768' }}>
+              Accede a tu panel de gestión y sigue creciendo 🌱
+            </p>
+          )}
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
             <div>
